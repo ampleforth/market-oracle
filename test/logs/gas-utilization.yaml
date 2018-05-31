@@ -1,0 +1,5 @@
+# Code generated - DO NOT EDIT.
+# Any manual changes may be lost.
+'ExchangeRateFactory:DEPLOYMENT': 924301
+'ExchangeRateAggregator:DEPLOYMENT': 1107540
+'ExchangeRateAggregator:aggregateExchangeRates(10 sources)': 138506
