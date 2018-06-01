@@ -64,9 +64,3 @@ node_modules/*
 
 # ES-Lint
 .eslintcache
-
-# Blockchain data
-chain_data_*
-
-# Node requests
-.node-xmlhttprequest*
