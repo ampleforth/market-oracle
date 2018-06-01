@@ -41,8 +41,9 @@
     "ganache-cli": "^6.1.0",
     "js-yaml": "^3.11.0",
     "lodash": "^4.17.5",
-    "truffle": "^4.1.11",
-    "web3": "^1.0.0-beta.33"
+    "openzeppelin-solidity": "1.9.0",
+    "truffle": "4.1.11",
+    "web3": "github:ethereum/web3.js"
   },
   "devDependencies": {
     "bignumber.js": "git+https://github.com/frozeman/bignumber.js-nolookahead.git",
@@ -61,6 +62,7 @@
     "eslint-plugin-standard": "^1.3.3",
     "pre-commit": "^1.2.2",
     "prettier": "^1.12.1",
+    "request": "^2.87.0",
     "request-promise": "^4.2.2",
     "sinon": "^4.5.0",
     "solhint": "^1.1.1",
