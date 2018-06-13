@@ -95,9 +95,9 @@ contract('ExchangeRateAggregator', async accounts => {
     });
   });
 
-  describe('aggregateExchangeRates', () => {
+  describe('aggregate', () => {
     describe('when the sources are live', () => {
-      let snapshot, aggregatorSpy;
+      let snapshot;
       before(async () => {
         snapshot = await chain.snapshotChain();
         await aggregator.addSource(s1.address);
@@ -105,21 +105,15 @@ contract('ExchangeRateAggregator', async accounts => {
         const gasLimit = await chain.getBlockGasLimit();
         await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
         await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
-        aggregatorSpy = new ContractEventSpy([
-          aggregator.AggregatedExchangeRate
-        ]);
-        aggregatorSpy.watch();
-        await aggregator.aggregateExchangeRates();
       });
       after(async () => {
-        aggregatorSpy.stopWatching();
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should emit out the AggregatedExchangeRate', async () => {
-        const event = aggregatorSpy.getEventByName('AggregatedExchangeRate');
-        expect(event).to.exist;
-        expect(event.args.exchangeRate.toNumber()).to.eq(1045880000000000000);
+      it('should calculate the aggregated rate and volume', async () => {
+        const r = await aggregator.aggregate.call();
+        expect(r[0].toNumber()).to.eq(1045880000000000000);
+        expect(r[1].toNumber()).to.eq(5);
       });
     });
 
@@ -134,14 +128,12 @@ contract('ExchangeRateAggregator', async accounts => {
         await chain.waitForSomeTime(3600);
         await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
         aggregatorSpy = new ContractEventSpy([
-          aggregator.SourceExpired,
-          aggregator.AggregatedExchangeRate
+          aggregator.SourceExpired
         ]);
         aggregatorSpy.watch();
-        await aggregator.aggregateExchangeRates();
+        await aggregator.aggregate.sendTransaction();
       });
       after(async () => {
-        aggregatorSpy.stopWatching();
         await chain.revertToSnapshot(snapshot);
       });
 
@@ -151,9 +143,9 @@ contract('ExchangeRateAggregator', async accounts => {
         expect(expiredEvent.args.source).to.eq(s2.address);
       });
       it('should calculate the exchange rate', async () => {
-        const event = aggregatorSpy.getEventByName('AggregatedExchangeRate');
-        expect(event).to.exist;
-        expect(event.args.exchangeRate.toNumber()).to.eq(1053200000000000000);
+        const r = await aggregator.aggregate.call();
+        expect(r[0].toNumber()).to.eq(1053200000000000000);
+        expect(r[1].toNumber()).to.eq(2);
       });
     });
 
@@ -173,7 +165,7 @@ contract('ExchangeRateAggregator', async accounts => {
       });
 
       it('should fail', async () => {
-        await chain.expectEthException(aggregator.aggregateExchangeRates());
+        await chain.expectEthException(aggregator.aggregate());
       });
     });
   });
@@ -190,8 +182,7 @@ contract('ExchangeRateAggregator', async accounts => {
         await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
         await s1.destroy({ from: A, gas: gasLimit });
         aggregatorSpy = new ContractEventSpy([
-          aggregator.SourceRemoved,
-          aggregator.AggregatedExchangeRate
+          aggregator.SourceRemoved
         ]);
         aggregatorSpy.watch();
         await aggregator.removeDeadSources();
