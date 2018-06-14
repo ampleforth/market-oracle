@@ -30,7 +30,6 @@ contract ExchangeRateAggregator is Ownable {
     event SourceAdded(ExchangeRateSource source);
     event SourceRemoved(ExchangeRateSource source);
     event SourceExpired(ExchangeRateSource source);
-    event AggregatedExchangeRate(uint256 exchangeRate);
 
     /**
      * @dev Adds source to whitelist
@@ -56,24 +55,24 @@ contract ExchangeRateAggregator is Ownable {
     }
 
     /**
-     * @dev Computes the volume weighted average of valid exchange rates from whitelisted sources.
+     * @dev Computes the volume weighted average of valid exchange rates from whitelisted sources and
+     * the total trade volume.
      */
-    function aggregateExchangeRates() public returns (uint256) {
-        uint256 weightedSum = 0;
-        uint256 sumOfWeights = 0;
+    function aggregate() public view returns (uint256, uint256) {
+        uint256 volumeWeightedSum = 0;
+        uint256 volume = 0;
         for (uint8 i = 0; i < whitelist.length; i++) {
             if (!whitelist[i].isValid()) {
                 emit SourceExpired(whitelist[i]);
                 continue;
             }
-            weightedSum = whitelist[i].exchangeRate()
+            volumeWeightedSum = whitelist[i].exchangeRate()
                 .mul(whitelist[i].volume())
-                .add(weightedSum);
-            sumOfWeights = sumOfWeights.add(whitelist[i].volume());
+                .add(volumeWeightedSum);
+            volume = volume.add(whitelist[i].volume());
         }
-        uint256 exchangeRate = weightedSum.div(sumOfWeights);
-        emit AggregatedExchangeRate(exchangeRate);
-        return exchangeRate;
+        uint256 exchangeRate = volumeWeightedSum.div(volume);
+        return (exchangeRate, volume);
     }
 
     /**

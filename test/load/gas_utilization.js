@@ -84,14 +84,14 @@ async function computeGasUtilization () {
   await cleanRoomTx('ExchangeRateAggregator:DEPLOYMENT', () => chainConfig.exchangeRateAggregatorTx);
   console.log('**************************************************************');
 
-  await cleanRoomTx('ExchangeRateAggregator:aggregateExchangeRates(10 sources)', async () => {
+  await cleanRoomTx('ExchangeRateAggregator:aggregate(10 sources)', async () => {
     for (let i = 0; i < 10; i++) {
       const r = await exchangeRateFactory.createSource('GDAX' + toString(i), callerConfig);
       const s = ExchangeRateSource.at(r.logs[0].args.source);
       exchangeRateAggregator.addSource(s.address);
       await s.reportRate(1050000000000000000, 1, callerConfig);
     }
-    return exchangeRateAggregator.aggregateExchangeRates();
+    return exchangeRateAggregator.aggregate.sendTransaction(callerConfig);
   });
   console.log('-----------------------------------------------------');
 }
