@@ -5,13 +5,13 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
- * @title Exchange rate source contract
+ * @title Market Source
  * @notice https://www.fragments.org/protocol/
  *
- * @dev This contract interacts with off chain exchange rate providers and records
- * the latest fragments to USD exchange rates onto the blockchain.
+ * @dev This contract provides the USD-UFragments exchange rate and volume from a single offchain
+ *      market source.
  */
-contract ExchangeRateSource is Destructible {
+contract MarketSource is Destructible {
     using SafeMath for uint256;
 
     // It signifies the number of decimal places in the reported exchange rate
