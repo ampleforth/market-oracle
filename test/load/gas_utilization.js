@@ -5,9 +5,9 @@
   npm run truffle exec test/load/gas_utilization.js verify
     => Verifies if the gas amounts in logs/gas-utilization.yaml is consistent with the computed values
 */
-const ExchangeRateAggregator = artifacts.require('ExchangeRateAggregator.sol');
-const ExchangeRateFactory = artifacts.require('ExchangeRateFactory.sol');
-const ExchangeRateSource = artifacts.require('ExchangeRateSource.sol');
+const MarketOracle = artifacts.require('MarketOracle.sol');
+const MarketSourceFactory = artifacts.require('MarketSourceFactory.sol');
+const MarketSource = artifacts.require('MarketSource.sol');
 
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -62,8 +62,8 @@ async function computeGasUtilization () {
   const accounts = await chain.getUserAccounts();
   const deployer = accounts[0];
 
-  const exchangeRateFactory = ExchangeRateFactory.at(chainConfig.exchangeRateFactory);
-  const exchangeRateAggregator = ExchangeRateAggregator.at(chainConfig.exchangeRateAggregator);
+  const marketSourceFactory = MarketSourceFactory.at(chainConfig.MarketSourceFactory);
+  const marketOracle = MarketOracle.at(chainConfig.MarketOracle);
 
   const callerConfig = {
     from: deployer,
@@ -78,20 +78,20 @@ async function computeGasUtilization () {
   console.log('CONTRACT DEPLOYMENT GAS UTILIZATION');
   console.log('-----------------------------------------------------');
 
-  await cleanRoomTx('ExchangeRateFactory:DEPLOYMENT', () => chainConfig.exchangeRateFactoryTx);
+  await cleanRoomTx('MarketSourceFactory:DEPLOYMENT', () => chainConfig.MarketSourceFactoryTx);
   console.log('-----------------------------------------------------');
 
-  await cleanRoomTx('ExchangeRateAggregator:DEPLOYMENT', () => chainConfig.exchangeRateAggregatorTx);
+  await cleanRoomTx('MarketOracle:DEPLOYMENT', () => chainConfig.MarketOracleTx);
   console.log('**************************************************************');
 
-  await cleanRoomTx('ExchangeRateAggregator:aggregate(10 sources)', async () => {
+  await cleanRoomTx('MarketOracle:getPriceAndVolume(10 sources)', async () => {
     for (let i = 0; i < 10; i++) {
-      const r = await exchangeRateFactory.createSource('GDAX' + toString(i), callerConfig);
-      const s = ExchangeRateSource.at(r.logs[0].args.source);
-      exchangeRateAggregator.addSource(s.address);
+      const r = await marketSourceFactory.createSource('GDAX' + toString(i), callerConfig);
+      const s = MarketSource.at(r.logs[0].args.source);
+      marketOracle.addSource(s.address);
       await s.reportRate(1050000000000000000, 1, callerConfig);
     }
-    return exchangeRateAggregator.aggregate.sendTransaction(callerConfig);
+    return marketOracle.getPriceAndVolume.sendTransaction(callerConfig);
   });
   console.log('-----------------------------------------------------');
 }

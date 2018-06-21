@@ -3,39 +3,37 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "./ExchangeRateSource.sol";
+import "./MarketSource.sol";
 
 
 /**
- * @title Exchange rate aggregator contract
+ * @title Market Oracle
  * @notice https://www.fragments.org/protocol/
  *
- * @dev The aggregator contract maintains a public whitelist of valid exchange rate sources
- * Only the contract owner can add/remove sources from this whitelist.
- * The aggregated exchange rate is computed as the volume weighted average of valid
- * exchange rates from whitelisted sources.
+ * @dev This oracle provides price and volume data onchain via a whitelist of sources. The exchange
+        rate is computed as a volume weighted average of valid exchange rates.
  */
-contract ExchangeRateAggregator is Ownable {
+contract MarketOracle is Ownable {
     using SafeMath for uint256;
 
-    // The maximum number of sources which can be added
+    // Maximum number of whitelisted sources
     uint8 public constant MAX_SOURCES = 255;
 
-    // It signifies the number of decimal places in the aggregated exchange rate returned by this aggregator
+    // Number of decimal places in the exchange rate provided by this oracle.
     uint8 public constant DECIMALS = 18;
 
     // Whitelist of sources
-    ExchangeRateSource[] public whitelist;
+    MarketSource[] public whitelist;
 
-    event SourceAdded(ExchangeRateSource source);
-    event SourceRemoved(ExchangeRateSource source);
-    event SourceExpired(ExchangeRateSource source);
+    event SourceAdded(MarketSource source);
+    event SourceRemoved(MarketSource source);
+    event SourceExpired(MarketSource source);
 
     /**
-     * @dev Adds source to whitelist
-     * @param source Reference to the ExchangeRateSource contract which is to be added.
+     * @dev Adds a source to the whitelist
+     * @param source Reference to the MarketSource contract which is to be added.
      */
-    function addSource(ExchangeRateSource source) public onlyOwner {
+    function addSource(MarketSource source) public onlyOwner {
         require(whitelist.length < MAX_SOURCES);
         require(source.DECIMALS() == DECIMALS);
         whitelist.push(source);
@@ -44,9 +42,9 @@ contract ExchangeRateAggregator is Ownable {
 
     /**
      * @dev Performs a linear scan and removes the provided source from whitelist
-     * @param source Reference to the ExchangeRateSource contract which is to be removed.
+     * @param source Reference to the MarketSource contract which is to be removed.
      */
-    function removeSource(ExchangeRateSource source) public onlyOwner {
+    function removeSource(MarketSource source) public onlyOwner {
         for (uint8 i = 0; i < whitelist.length; i++) {
             if (whitelist[i] == source) {
                 removeSource(i);
@@ -55,10 +53,10 @@ contract ExchangeRateAggregator is Ownable {
     }
 
     /**
-     * @dev Computes the volume weighted average of valid exchange rates from whitelisted sources and
-     * the total trade volume.
+     * @return The volume weighted average of valid exchange rates from whitelisted sources and
+     *         the total trade volume.
      */
-    function aggregate() public view returns (uint256, uint256) {
+    function getPriceAndVolume() public view returns (uint256, uint256) {
         uint256 volumeWeightedSum = 0;
         uint256 volume = 0;
         for (uint8 i = 0; i < whitelist.length; i++) {
@@ -76,7 +74,7 @@ contract ExchangeRateAggregator is Ownable {
     }
 
     /**
-     * @dev Performs a linear scan on the whitelisted sources and removes dead sources
+     * @dev Performs a linear scan on the whitelisted sources and removes any dead sources
      */
     function removeDeadSources() public {
         for (uint8 i = 0; i < whitelist.length; i++) {

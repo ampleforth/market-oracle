@@ -1,20 +1,20 @@
-const ExchangeRateFactory = artifacts.require('ExchangeRateFactory.sol');
-const ExchangeRateSource = artifacts.require('ExchangeRateSource.sol');
+const MarketSourceFactory = artifacts.require('MarketSourceFactory.sol');
+const MarketSource = artifacts.require('MarketSource.sol');
 
 const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
-contract('ExchangeRateSource', async accounts => {
+contract('MarketSource', async accounts => {
   let factory, source;
   const deployer = accounts[0];
   const A = accounts[1];
   const gasLimit = await chain.getBlockGasLimit();
 
   before(async function () {
-    factory = await ExchangeRateFactory.deployed();
+    factory = await MarketSourceFactory.deployed();
     const r = await factory.createSource('GDAX', { from: A });
-    source = ExchangeRateSource.at(r.logs[0].args.source);
+    source = MarketSource.at(r.logs[0].args.source);
   });
 
   describe('initialization', () => {

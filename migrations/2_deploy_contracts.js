@@ -1,5 +1,5 @@
-const ExchangeRateFactory = artifacts.require('ExchangeRateFactory.sol');
-const ExchangeRateAggregator = artifacts.require('ExchangeRateAggregator.sol');
+const MarketSourceFactory = artifacts.require('MarketSourceFactory.sol');
+const MarketOracle = artifacts.require('MarketOracle.sol');
 
 const APP_ROOT_PATH = require('app-root-path');
 const _require = APP_ROOT_PATH.require;
@@ -15,8 +15,8 @@ module.exports = function (deployer, network, accounts) {
 
   async function deployFragmentsContracts (deployer) {
     deployer.logger.log('Deploying core contracts');
-    await deployer.deploy(ExchangeRateFactory, deploymentConfig);
-    await deployer.deploy(ExchangeRateAggregator, deploymentConfig);
+    await deployer.deploy(MarketSourceFactory, deploymentConfig);
+    await deployer.deploy(MarketOracle, deploymentConfig);
   }
 
   async function saveDeploymentData () {
@@ -26,10 +26,10 @@ module.exports = function (deployer, network, accounts) {
       rpcHttpClient: `http://${config.host}:${config.port}`,
       rpcWsClient: `ws://${config.host}:${config.wsPort}`,
       deployer: deployerAccount,
-      exchangeRateAggregator: ExchangeRateAggregator.address,
-      exchangeRateAggregatorTx: ExchangeRateAggregator.transactionHash,
-      exchangeRateFactory: ExchangeRateFactory.address,
-      exchangeRateFactoryTx: ExchangeRateFactory.transactionHash
+      MarketOracle: MarketOracle.address,
+      MarketOracleTx: MarketOracle.transactionHash,
+      MarketSourceFactory: MarketSourceFactory.address,
+      MarketSourceFactoryTx: MarketSourceFactory.transactionHash
     }, `${APP_ROOT_PATH}/migrations/deployments/${config.ref}.yaml`);
   }
 
