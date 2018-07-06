@@ -30,10 +30,31 @@ contract MarketOracle is Ownable {
     event SourceExpired(MarketSource source);
 
     /**
+     * @return The volume weighted average of valid exchange rates from whitelisted sources and
+     *         the total trade volume.
+     */
+    function getPriceAndVolume() external returns (uint128, uint128) {
+        uint256 volumeWeightedSum = 0;
+        uint256 volume = 0;
+        for (uint8 i = 0; i < whitelist.length; i++) {
+            if (!whitelist[i].isValid()) {
+                emit SourceExpired(whitelist[i]);
+                continue;
+            }
+            volumeWeightedSum = whitelist[i].exchangeRate()
+            .mul(whitelist[i].volume())
+            .add(volumeWeightedSum);
+            volume = volume.add(whitelist[i].volume());
+        }
+        uint256 exchangeRate = volumeWeightedSum.div(volume);
+        return (uint128(exchangeRate), uint128(volume));
+    }
+
+    /**
      * @dev Adds a source to the whitelist
      * @param source Reference to the MarketSource contract which is to be added.
      */
-    function addSource(MarketSource source) public onlyOwner {
+    function addSource(MarketSource source) external onlyOwner {
         require(whitelist.length < MAX_SOURCES);
         require(source.DECIMALS() == DECIMALS);
         whitelist.push(source);
@@ -44,7 +65,7 @@ contract MarketOracle is Ownable {
      * @dev Performs a linear scan and removes the provided source from whitelist
      * @param source Reference to the MarketSource contract which is to be removed.
      */
-    function removeSource(MarketSource source) public onlyOwner {
+    function removeSource(MarketSource source) external onlyOwner {
         for (uint8 i = 0; i < whitelist.length; i++) {
             if (whitelist[i] == source) {
                 removeSource(i);
@@ -53,30 +74,9 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @return The volume weighted average of valid exchange rates from whitelisted sources and
-     *         the total trade volume.
-     */
-    function getPriceAndVolume() public view returns (uint256, uint256) {
-        uint256 volumeWeightedSum = 0;
-        uint256 volume = 0;
-        for (uint8 i = 0; i < whitelist.length; i++) {
-            if (!whitelist[i].isValid()) {
-                emit SourceExpired(whitelist[i]);
-                continue;
-            }
-            volumeWeightedSum = whitelist[i].exchangeRate()
-                .mul(whitelist[i].volume())
-                .add(volumeWeightedSum);
-            volume = volume.add(whitelist[i].volume());
-        }
-        uint256 exchangeRate = volumeWeightedSum.div(volume);
-        return (exchangeRate, volume);
-    }
-
-    /**
      * @dev Performs a linear scan on the whitelisted sources and removes any dead sources
      */
-    function removeDeadSources() public {
+    function removeDeadSources() external {
         for (uint8 i = 0; i < whitelist.length; i++) {
             if (isContractDead(address(whitelist[i]))) {
                 removeSource(i);
