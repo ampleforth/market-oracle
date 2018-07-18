@@ -1,5 +1,5 @@
 {
-  "name": "exchange_rate_contracts",
+  "name": "market-oracle",
   "version": "0.0.1",
   "description": "Ethereum smart contracts to aggregate exchange rates from various sources",
   "keywords": [
@@ -7,15 +7,15 @@
     "smart-contracts",
     "solidity"
   ],
-  "homepage": "https://github.com/frgprotocol/exchange_rate_contracts#readme",
+  "homepage": "https://github.com/frgprotocol/market-oracle#readme",
   "bugs": {
-    "url": "https://github.com/frgprotocol/exchange_rate_contracts/issues"
+    "url": "https://github.com/frgprotocol/market-oracle/issues"
   },
   "license": "ISC",
   "author": "team@fragments.org",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frgprotocol/exchange_rate_contracts.git"
+    "url": "git+https://github.com/frgprotocol/market-oracle.git"
   },
   "scripts": {
     "blockchain:start": "scripts/blockchain/runner.sh 1",
