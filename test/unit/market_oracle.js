@@ -7,6 +7,10 @@ const { ContractEventSpy } = _require('/util/spies');
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
+function nowSeconds () {
+  return parseInt(Date.now() / 1000);
+}
+
 contract('MarketOracle', async function (accounts) {
   let factory, oracle, s1, s2, r;
   const A = accounts[1];
@@ -103,8 +107,8 @@ contract('MarketOracle', async function (accounts) {
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
         const gasLimit = await chain.getBlockGasLimit();
-        await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
-        await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
+        await s1.reportRate(1053200000000000000, 2, nowSeconds(), { from: A, gas: gasLimit });
+        await s2.reportRate(1041000000000000000, 3, nowSeconds(), { from: B, gas: gasLimit });
       });
       after(async function () {
         await chain.revertToSnapshot(snapshot);
@@ -119,14 +123,14 @@ contract('MarketOracle', async function (accounts) {
 
     describe('when one of sources has expired', function () {
       let snapshot, oracleSpy;
+      const timestamp = nowSeconds();
       before(async function () {
         snapshot = await chain.snapshotChain();
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
         const gasLimit = await chain.getBlockGasLimit();
-        await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
-        await chain.waitForSomeTime(3600);
-        await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
+        await s2.reportRate(1041000000000000000, 3, timestamp - 3600, { from: B, gas: gasLimit });
+        await s1.reportRate(1053200000000000000, 2, timestamp, { from: A, gas: gasLimit });
         oracleSpy = new ContractEventSpy([
           oracle.SourceExpired
         ]);
@@ -156,8 +160,8 @@ contract('MarketOracle', async function (accounts) {
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
         const gasLimit = await chain.getBlockGasLimit();
-        await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
-        await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
+        await s1.reportRate(1053200000000000000, 2, nowSeconds(), { from: A, gas: gasLimit });
+        await s2.reportRate(1041000000000000000, 3, nowSeconds(), { from: B, gas: gasLimit });
         await s1.destroy({ from: A, gas: gasLimit });
       });
       after(async function () {
@@ -178,8 +182,8 @@ contract('MarketOracle', async function (accounts) {
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
         const gasLimit = await chain.getBlockGasLimit();
-        await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
-        await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
+        await s1.reportRate(1053200000000000000, 2, nowSeconds(), { from: A, gas: gasLimit });
+        await s2.reportRate(1041000000000000000, 3, nowSeconds(), { from: B, gas: gasLimit });
         await s1.destroy({ from: A, gas: gasLimit });
         oracleSpy = new ContractEventSpy([
           oracle.SourceRemoved
