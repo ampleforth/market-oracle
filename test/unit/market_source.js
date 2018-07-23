@@ -25,20 +25,38 @@ contract('MarketSource', async accounts => {
 
   describe('reportRate', () => {
     describe('when reported by the owner', () => {
-      let r;
-      before(async () => {
-        r = await source.reportRate(1050000000000000000, 3, { from: A, gas: gasLimit });
+      describe('when reported exchangeRate is 0', () => {
+        it('should revert', async () => {
+          await chain.expectEthException(
+            source.reportRate(0, 300, { from: deployer, gas: gasLimit })
+          );
+        });
       });
-      it('should update the report', async () => {
-        expect((await source.exchangeRate.call()).toNumber()).to.eq(1050000000000000000);
-        expect((await source.volume.call()).toNumber()).to.eq(3);
+
+      describe('when reported volume is 0', () => {
+        it('should revert', async () => {
+          await chain.expectEthException(
+            source.reportRate(1050000000000000000, 0, { from: deployer, gas: gasLimit })
+          );
+        });
       });
-      it('should emit ExchangeRateReported', async () => {
-        const reportEvent = r.logs[0];
-        expect(reportEvent.event).to.eq('ExchangeRateReported');
-        expect(reportEvent.args.exchangeRate.toNumber()).to.eq(1050000000000000000);
-        expect(reportEvent.args.volume.toNumber()).to.eq(3);
-        expect(reportEvent.args.timestamp.toNumber()).to.exist;
+
+      describe('when the exchange rate and volume are valid', () => {
+        let r;
+        before(async () => {
+          r = await source.reportRate(1050000000000000000, 3, { from: A, gas: gasLimit });
+        });
+        it('should update the report', async () => {
+          expect((await source.exchangeRate.call()).toNumber()).to.eq(1050000000000000000);
+          expect((await source.volume.call()).toNumber()).to.eq(3);
+        });
+        it('should emit ExchangeRateReported', async () => {
+          const reportEvent = r.logs[0];
+          expect(reportEvent.event).to.eq('ExchangeRateReported');
+          expect(reportEvent.args.exchangeRate.toNumber()).to.eq(1050000000000000000);
+          expect(reportEvent.args.volume24hrs.toNumber()).to.eq(3);
+          expect(reportEvent.args.timestamp.toNumber()).to.exist;
+        });
       });
     });
 
@@ -51,11 +69,11 @@ contract('MarketSource', async accounts => {
     });
   });
 
-  describe('isValid', () => {
-    describe('when the most recent report has is valid', () => {
+  describe('isActive', () => {
+    describe('when the most recent report has NOT expired', () => {
       it('should return true', async () => {
         await source.reportRate(1000000000000000000, 1, { from: A, gas: gasLimit });
-        expect(await source.isValid.call()).to.be.true;
+        expect(await source.isActive.call()).to.be.true;
       });
     });
 
@@ -63,7 +81,7 @@ contract('MarketSource', async accounts => {
       it('should return false', async () => {
         await source.reportRate(1000000000000000000, 1, { from: A, gas: gasLimit });
         await chain.waitForSomeTime(3600);
-        expect(await source.isValid.call()).to.be.false;
+        expect(await source.isActive.call()).to.be.false;
       });
     });
   });

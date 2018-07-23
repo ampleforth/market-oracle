@@ -10,17 +10,14 @@ import "./MarketSource.sol";
  * @title Market Oracle
  * @notice https://www.fragments.org/protocol/
  *
- * @dev This oracle provides price and volume data onchain via a whitelist of sources. The exchange
-        rate is computed as a volume weighted average of valid exchange rates.
+ * @dev This oracle provides price and volume data onchain using data from a whitelisted
+        set of market sources.
  */
 contract MarketOracle is Ownable {
     using SafeMath for uint256;
 
     // Maximum number of whitelisted sources
     uint8 public constant MAX_SOURCES = 255;
-
-    // Number of decimal places in the exchange rate provided by this oracle.
-    uint8 public constant DECIMALS = 18;
 
     // Whitelist of sources
     MarketSource[] public whitelist;
@@ -30,40 +27,44 @@ contract MarketOracle is Ownable {
     event SourceExpired(MarketSource source);
 
     /**
-     * @return The volume weighted average of valid exchange rates from whitelisted sources and
-     *         the total trade volume.
+     * @return The volume weighted average of active exchange rates and the total trade volume.
+     *         The returned price is in an 18 decimal fixed point format.
+     *         The returned volume parameter is in a 2 decimal fixed point format.
      */
     function getPriceAndVolume() external returns (uint128, uint128) {
         uint256 volumeWeightedSum = 0;
         uint256 volume = 0;
+
         for (uint8 i = 0; i < whitelist.length; i++) {
-            if (!whitelist[i].isValid()) {
+            if (!whitelist[i].isActive()) {
                 emit SourceExpired(whitelist[i]);
                 continue;
             }
-            volumeWeightedSum = whitelist[i].exchangeRate()
-            .mul(whitelist[i].volume())
-            .add(volumeWeightedSum);
+
+            volumeWeightedSum = volumeWeightedSum.add(
+                whitelist[i].exchangeRate().mul(whitelist[i].volume())
+            );
+
             volume = volume.add(whitelist[i].volume());
         }
+
         uint256 exchangeRate = volumeWeightedSum.div(volume);
         return (uint128(exchangeRate), uint128(volume));
     }
 
     /**
-     * @dev Adds a source to the whitelist
-     * @param source Reference to the MarketSource contract which is to be added.
+     * @dev Adds a market source to the whitelist
+     * @param source Reference to the MarketSource contract to be whitelisted.
      */
     function addSource(MarketSource source) external onlyOwner {
         require(whitelist.length < MAX_SOURCES);
-        require(source.DECIMALS() == DECIMALS);
         whitelist.push(source);
         emit SourceAdded(source);
     }
 
     /**
-     * @dev Performs a linear scan and removes the provided source from whitelist
-     * @param source Reference to the MarketSource contract which is to be removed.
+     * @dev Performs a linear scan and removes the provided market source from whitelist
+     * @param source Reference to the MarketSource contract to be delisted.
      */
     function removeSource(MarketSource source) external onlyOwner {
         for (uint8 i = 0; i < whitelist.length; i++) {
@@ -74,7 +75,7 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Performs a linear scan on the whitelisted sources and removes any dead sources
+     * @dev Performs a linear scan on the whitelisted sources and removes any dead market sources
      */
     function removeDeadSources() external {
         for (uint8 i = 0; i < whitelist.length; i++) {
@@ -85,7 +86,8 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Checks if the contract at the given address has been destroyed
+     * @param _address Address of a smart contract
+     * @dev Checks if the contract has been destroyed
      */
     function isContractDead(address _address) private view returns (bool) {
         uint size;
@@ -94,7 +96,8 @@ contract MarketOracle is Ownable {
     }
 
    /**
-    * @dev Given an index removes source at that index from the whitelist
+    * @param index Index of the Market Source form the whitelist
+    * @dev Removes the market source at given index
     */
     function removeSource(uint8 index) private {
         require(index < whitelist.length);
