@@ -7,7 +7,7 @@ const { ContractEventSpy } = _require('/util/spies');
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
-contract('MarketOracle', async accounts => {
+contract('MarketOracle', async function (accounts) {
   let factory, oracle, s1, s2, r;
   const A = accounts[1];
   const B = accounts[2];
@@ -21,10 +21,10 @@ contract('MarketOracle', async accounts => {
     s2 = MarketSource.at(r.logs[0].args.source);
   });
 
-  describe('addSource', () => {
-    describe('when successful', () => {
+  describe('addSource', function () {
+    describe('when successful', function () {
       let sourceAddSpy, snapshot;
-      before(async () => {
+      before(async function () {
         snapshot = await chain.snapshotChain();
         sourceAddSpy = new ContractEventSpy([
           oracle.SourceAdded
@@ -32,34 +32,34 @@ contract('MarketOracle', async accounts => {
         sourceAddSpy.watch();
         await oracle.addSource(s1.address);
       });
-      after(async () => {
+      after(async function () {
         sourceAddSpy.stopWatching();
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should emit SourceAdded message', async () => {
+      it('should emit SourceAdded message', async function () {
         const addedEvent = sourceAddSpy.getEventByName('SourceAdded');
         expect(addedEvent).to.exist;
         expect(addedEvent.args.source).to.eq(s1.address);
       });
-      it('should add s1 to the whitelist', async () => {
+      it('should add s1 to the whitelist', async function () {
         expect(await oracle.whitelist.call(0)).to.eq(s1.address);
       });
     });
 
-    describe('when more than MAX_SOURCES are added', () => {
+    describe('when more than MAX_SOURCES are added', function () {
       let snapshot;
-      before(async () => {
+      before(async function () {
         snapshot = await chain.snapshotChain();
         for (let i = 0; i < 254; i++) {
           await oracle.addSource(s1.address);
         }
       });
-      after(async () => {
+      after(async function () {
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should fail', async () => {
+      it('should fail', async function () {
         await oracle.addSource(s1.address);
         await chain.expectEthException(
           oracle.addSource(s1.address)
@@ -68,9 +68,9 @@ contract('MarketOracle', async accounts => {
     });
   });
 
-  describe('removeSource', () => {
+  describe('removeSource', function () {
     let sourceDelSpy, snapshot;
-    before(async () => {
+    before(async function () {
       snapshot = await chain.snapshotChain();
       await oracle.addSource(s1.address);
       await oracle.addSource(s2.address);
@@ -80,25 +80,25 @@ contract('MarketOracle', async accounts => {
       sourceDelSpy.watch();
       await oracle.removeSource(s1.address);
     });
-    after(async () => {
+    after(async function () {
       sourceDelSpy.stopWatching();
       await chain.revertToSnapshot(snapshot);
     });
 
-    it('should emit SourceRemoved message', async () => {
+    it('should emit SourceRemoved message', async function () {
       const removedEvent = sourceDelSpy.getEventByName('SourceRemoved');
       expect(removedEvent).to.exist;
       expect(removedEvent.args.source).to.eq(s1.address);
     });
-    it('should remove source from the whitelist', async () => {
+    it('should remove source from the whitelist', async function () {
       expect(await oracle.whitelist.call(0)).to.eq(s2.address);
     });
   });
 
-  describe('getPriceAndVolume', () => {
-    describe('when the sources are live', () => {
+  describe('getPriceAndVolume', function () {
+    describe('when the sources are live', function () {
       let snapshot;
-      before(async () => {
+      before(async function () {
         snapshot = await chain.snapshotChain();
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
@@ -106,20 +106,20 @@ contract('MarketOracle', async accounts => {
         await s1.reportRate(1053200000000000000, 2, { from: A, gas: gasLimit });
         await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
       });
-      after(async () => {
+      after(async function () {
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should calculate the combined market rate and volume', async () => {
+      it('should calculate the combined market rate and volume', async function () {
         const r = await oracle.getPriceAndVolume.call();
         expect(r[0].toNumber()).to.eq(1045880000000000000);
         expect(r[1].toNumber()).to.eq(5);
       });
     });
 
-    describe('when one of sources has expired', () => {
+    describe('when one of sources has expired', function () {
       let snapshot, oracleSpy;
-      before(async () => {
+      before(async function () {
         snapshot = await chain.snapshotChain();
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
@@ -133,25 +133,25 @@ contract('MarketOracle', async accounts => {
         oracleSpy.watch();
         await oracle.getPriceAndVolume.sendTransaction();
       });
-      after(async () => {
+      after(async function () {
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should emit SourceExpired message', async () => {
+      it('should emit SourceExpired message', async function () {
         const expiredEvent = oracleSpy.getEventByName('SourceExpired');
         expect(expiredEvent).to.exist;
         expect(expiredEvent.args.source).to.eq(s2.address);
       });
-      it('should calculate the exchange rate', async () => {
+      it('should calculate the exchange rate', async function () {
         const r = await oracle.getPriceAndVolume.call();
         expect(r[0].toNumber()).to.eq(1053200000000000000);
         expect(r[1].toNumber()).to.eq(2);
       });
     });
 
-    describe('when one of sources is NOT live', () => {
+    describe('when one of sources is NOT live', function () {
       let snapshot;
-      before(async () => {
+      before(async function () {
         snapshot = await chain.snapshotChain();
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
@@ -160,20 +160,20 @@ contract('MarketOracle', async accounts => {
         await s2.reportRate(1041000000000000000, 3, { from: B, gas: gasLimit });
         await s1.destroy({ from: A, gas: gasLimit });
       });
-      after(async () => {
+      after(async function () {
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should fail', async () => {
+      it('should fail', async function () {
         await chain.expectEthException(oracle.getPriceAndVolume());
       });
     });
   });
 
-  describe('removeDeadSources', () => {
-    describe('when one of sources is NOT live', () => {
+  describe('removeDeadSources', function () {
+    describe('when one of sources is NOT live', function () {
       let snapshot, oracleSpy;
-      before(async () => {
+      before(async function () {
         snapshot = await chain.snapshotChain();
         await oracle.addSource(s1.address);
         await oracle.addSource(s2.address);
@@ -187,17 +187,17 @@ contract('MarketOracle', async accounts => {
         oracleSpy.watch();
         await oracle.removeDeadSources();
       });
-      after(async () => {
+      after(async function () {
         oracleSpy.stopWatching();
         await chain.revertToSnapshot(snapshot);
       });
 
-      it('should emit SourceRemoved message', async () => {
+      it('should emit SourceRemoved message', async function () {
         const deadEvent = oracleSpy.getEventByName('SourceRemoved');
         expect(deadEvent).to.exist;
         expect(deadEvent.args.source).to.eq(s1.address);
       });
-      it('should remove that source from whitelist', async () => {
+      it('should remove that source from whitelist', async function () {
         expect(await oracle.whitelist.call(0)).to.eq(s2.address);
       });
     });
