@@ -36,27 +36,28 @@ contract MarketSource is Destructible {
     }
 
     /**
-     * @dev The MarketSource commits to the blockchain, the most recent
-     *      exchangeRate and 24-hour trade volume as observed.
-     * @param exchangeRate The average UFragments-USD exchange rate over the previous 24-hours
-     *         as observed by the MarketSource. The submitted exchange rate is an
-     *         18 point fixed float.
-     *        (eg) 1500000000000000000 (1.5e18) means the rate is  [1.5 USD = 1 UFragments]
-     * @param volume24hrs The total trade volume of UFragments traded over the previous 24-hours.
-     *        The submitted volume is a 2 point fixed float.
+     * @dev The MarketSource receives offchain information about the state of the market and
+     *      provides it to downstream onchain consumers.
+     * @param exchangeRate The average UFragments-USD exchange rate over 24-hours.
+     *        Submitted as an fixed point number scaled by {1/10**18}.
+     *        (eg) 1500000000000000000 (1.5e18) means the rate is [1.5 USD = 1 UFragments]
+     * @param volume24hrs The total trade volume of UFragments over 24-hours,
+     *        up to the time of observation. Submitted as a fixed point number scaled by {1/10**2}.
      *        (eg) 12350032 means 123500.32 UFragments were being traded.
+     * @param timestamp The date and time when the observation was made. Sumbitted
+     *        as a UNIX timestamp, (ie) number of seconds since Jan 01 1970(UTC).
      */
-    function reportRate(uint256 exchangeRate, uint256 volume24hrs) public onlyOwner {
+    function reportRate(uint256 exchangeRate, uint256 volume24hrs, uint256 timestamp) public onlyOwner {
         require(exchangeRate > 0);
         require(volume24hrs > 0);
 
         report = Report({
             exchangeRate: exchangeRate,
             volume24hrs: volume24hrs,
-            timestamp: now
+            timestamp: timestamp
         });
 
-        emit ExchangeRateReported(exchangeRate, volume24hrs, now);
+        emit ExchangeRateReported(exchangeRate, volume24hrs, timestamp);
     }
 
     /**

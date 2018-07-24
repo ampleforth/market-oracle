@@ -1,5 +1,5 @@
 # Code generated - DO NOT EDIT.
 # Any manual changes may be lost.
-'MarketSourceFactory:DEPLOYMENT': 1013116
+'MarketSourceFactory:DEPLOYMENT': 998567
 'MarketOracle:DEPLOYMENT': 1133401
-'MarketOracle:getPriceAndVolume(10 sources)': 136469
+'MarketOracle:getPriceAndVolume(10 sources)': 135809

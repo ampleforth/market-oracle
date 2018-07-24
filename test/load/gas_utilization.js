@@ -89,7 +89,7 @@ async function computeGasUtilization () {
       const r = await marketSourceFactory.createSource('GDAX' + toString(i), callerConfig);
       const s = MarketSource.at(r.logs[0].args.source);
       marketOracle.addSource(s.address);
-      await s.reportRate(1050000000000000000, 1, callerConfig);
+      await s.reportRate(1050000000000000000, 1, parseInt(Date.now() / 1000), callerConfig);
     }
     return marketOracle.getPriceAndVolume.sendTransaction(callerConfig);
   });
