@@ -35,7 +35,7 @@ module.exports = {
               // misc
               "deployer", "http", "https", "github", "chai", "argv", "evm",
               "jsonrpc", "timestamp", "uint256", "erc20", "bignumber", "lodash",
-              "arg", "npm", "seedrandom", "eql", "sinon", "yaml", "promisify",
+              "arg", "npm", "seedrandom", "eql", "sinon", "yaml", "posix", "promisify",
               "passcode", "geth", "rpc", "rpcmsg","stdev",  "stochasm", "aggregator",
               "whitelist",
 
