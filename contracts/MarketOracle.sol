@@ -11,13 +11,10 @@ import "./MarketSource.sol";
  * @notice https://www.fragments.org/protocol/
  *
  * @dev This oracle provides price and volume data onchain using data from a whitelisted
-        set of market sources.
+ *      set of market sources.
  */
 contract MarketOracle is Ownable {
     using SafeMath for uint256;
-
-    // Maximum number of whitelisted sources
-    uint8 public constant MAX_SOURCES = 255;
 
     // Whitelist of sources
     MarketSource[] public whitelist;
@@ -31,25 +28,25 @@ contract MarketOracle is Ownable {
      *         The returned price is in an 18 decimal fixed point format.
      *         The returned volume parameter is in a 2 decimal fixed point format.
      */
-    function getPriceAndVolume() external returns (uint128, uint128) {
+    function getPriceAndVolume() external returns (uint256, uint256) {
         uint256 volumeWeightedSum = 0;
         uint256 volume = 0;
 
-        for (uint8 i = 0; i < whitelist.length; i++) {
+        for (uint256 i = 0; i < whitelist.length; i++) {
             if (!whitelist[i].isActive()) {
                 emit SourceExpired(whitelist[i]);
                 continue;
             }
 
             volumeWeightedSum = volumeWeightedSum.add(
-                whitelist[i].exchangeRate().mul(whitelist[i].volume())
+                whitelist[i].getExchangeRate().mul(whitelist[i].getVolume24hrs())
             );
 
-            volume = volume.add(whitelist[i].volume());
+            volume = volume.add(whitelist[i].getVolume24hrs());
         }
 
         uint256 exchangeRate = volumeWeightedSum.div(volume);
-        return (uint128(exchangeRate), uint128(volume));
+        return (exchangeRate, volume);
     }
 
     /**
@@ -57,7 +54,6 @@ contract MarketOracle is Ownable {
      * @param source Reference to the MarketSource contract to be whitelisted.
      */
     function addSource(MarketSource source) external onlyOwner {
-        require(whitelist.length < MAX_SOURCES);
         whitelist.push(source);
         emit SourceAdded(source);
     }

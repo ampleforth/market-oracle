@@ -50,26 +50,6 @@ contract('MarketOracle', async function (accounts) {
         expect(await oracle.whitelist.call(0)).to.eq(s1.address);
       });
     });
-
-    describe('when more than MAX_SOURCES are added', function () {
-      let snapshot;
-      before(async function () {
-        snapshot = await chain.snapshotChain();
-        for (let i = 0; i < 254; i++) {
-          await oracle.addSource(s1.address);
-        }
-      });
-      after(async function () {
-        await chain.revertToSnapshot(snapshot);
-      });
-
-      it('should fail', async function () {
-        await oracle.addSource(s1.address);
-        await chain.expectEthException(
-          oracle.addSource(s1.address)
-        );
-      });
-    });
   });
 
   describe('removeSource', function () {
