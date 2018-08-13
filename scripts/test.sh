@@ -5,44 +5,54 @@ PROJECT_DIR=$DIR/../
 # Exit script as soon as a command fails.
 set -o errexit
 
-source $DIR/blockchain/index.sh
+process-pid(){
+  lsof -t -i:$1
+}
 
 run-unit-tests(){
-  frg-truffle \
-    --network $NETWORK_REF \
+  npx truffle \
+    --network $1 \
     test \
-    $PROJECT_DIR/test/unit/*
+    $PROJECT_DIR/test/unit/*.js
 }
 
 run-load-tests(){
-  frg-truffle \
-    --network $NETWORK_REF \
+  npx truffle \
+    --network $1 \
     exec \
     $PROJECT_DIR/test/load/gas_utilization.js verify
 }
 
-NETWORK_REF=$1
-read NETWORK_REF PORT < <(get-network-config $NETWORK_REF)
+read REF GANACHE_PORT < <(npx get-network-config ganacheUnitTest)
 
 # Is chain running?
-if [ $(process-pid $PORT) ]; then
-  REFRESH=0
+if [ $(process-pid $GANACHE_PORT) ]
+then
+  REFRESH_GANACHE=0
 else
-  REFRESH=1
+  REFRESH_GANACHE=1
 fi
 
-# Start chain
-start-chain $NETWORK_REF
-deploy-contracts $NETWORK_REF
-
-# Run tests
-run-unit-tests
-run-load-tests
-
 # Stop chain
-cleanup(){
-  if [ "$REFRESH" == "1" ]; then
-    stop-chain $NETWORK_REF
+cleanupGanache(){
+  if [ "$REFRESH_GANACHE" == "1" ]
+  then
+    npx stop-chain "ganacheUnitTest"
   fi
 }
-trap cleanup EXIT
+
+echo "------Start blockchain(s)"
+npx start-chain "ganacheUnitTest"
+
+echo "------Deploying contracts"
+npx truffle  migrate --reset --network "ganacheUnitTest"
+
+echo "------Running unit tests"
+run-unit-tests "ganacheUnitTest"
+
+echo "------Running gas utilization test"
+run-load-tests "ganacheUnitTest"
+
+trap cleanupGanache EXIT
+
+exit 0
