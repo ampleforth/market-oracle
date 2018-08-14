@@ -5,17 +5,21 @@ Set of smart contracts on Ethereum deal with exchange rate reporting and aggrega
 
 # Getting started
 ```bash
-# Install dependencies
+# Install project dependencies
 npm install
+
+# Install ethereum local blockchain(s) and associated dependencies
+npx setup-local-chains
 ```
 
 # Useful scripts
 ``` bash
-# You can use the following commands to start/stop local ganache chain
-npm run blockchain:start
-npm run blockchain:stop
+# You can use the following command to start a local blockchain instance
+npx start-chain [ganacheUnitTest|gethUnitTest]
+
 # Lint code
 npm run lint
+
 # track gas utilization
 npm run trackGasUtilization
 ```
@@ -26,5 +30,5 @@ npm run trackGasUtilization
 npm test
 
 # Run unit tests in isolation
-npm run truffle test test/test_file.js
+npx truffle --network ganacheUnitTest test test/test_file.js
 ```

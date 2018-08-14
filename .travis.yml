@@ -6,9 +6,13 @@ node_js:
 cache:
   directories:
     - node_modules
+    - $(npm config get prefix)/bin/ganache-cli
+before_install:
+  - npm install -g npx
 script:
+  - npx setup-local-chains lite
   - npm run lint
-  - npm run test
+  - ./scripts/test.sh
 notifications:
   email:
     - eng@fragments.org

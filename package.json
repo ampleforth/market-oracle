@@ -12,37 +12,34 @@
     "url": "https://github.com/frgprotocol/market-oracle/issues"
   },
   "license": "ISC",
-  "author": "team@fragments.org",
+  "author": "eng@fragments.org",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/frgprotocol/market-oracle.git"
   },
   "scripts": {
-    "blockchain:start": "scripts/blockchain/runner.sh 1",
-    "blockchain:stop": "scripts/blockchain/runner.sh 0",
-    "precommit": "scripts/pre-commit.sh",
-    "lint": "npm run lint:js && npm run lint:sol",
-    "lint:js": "node_modules/eslint/bin/eslint.js ./ --cache --fix",
-    "lint:sol": "node_modules/solhint/solhint.js contracts/*.sol",
-    "test": "scripts/test.sh ganacheUnitTest",
-    "trackGasUtilization": "npm run blockchain:start && npm run truffle exec test/load/gas_utilization.js save",
-    "truffle": "node_modules/truffle/build/cli.bundled.js --network ganacheUnitTest"
+    "deploy-contracts": "npx truffle  migrate --reset --network",
+    "precommit": "./scripts/pre-commit.sh",
+    "lint": "npx eslint ./ --cache --fix && npx solhint contracts/*.sol",
+    "test": "./scripts/test.sh",
+    "setup-ganache": "npx start-chain ganacheUnitTest && npm run deploy-contracts ganacheUnitTest",
+    "trackGasUtilization": "npm run setup-ganache && npx truffle --network ganacheUnitTest exec test/load/gas_utilization.js save"
   },
   "pre-commit": {
     "run": [
-      "lint:js",
-      "lint:sol",
-      "trackGasUtilization",
-      "precommit"
+      "precommit",
+      "lint",
+      "trackGasUtilization"
     ]
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
+    "frg-ethereum-runners": "git+ssh://git@github.com/frgprotocol/frg-ethereum-runners.git#master",
     "ganache-cli": "^6.1.0",
     "js-yaml": "^3.11.0",
     "lodash": "^4.17.5",
     "openzeppelin-solidity": "1.10.0",
-    "truffle": "4.1.13",
+    "truffle": "^4.1.13",
     "web3": "github:ethereum/web3.js"
   },
   "devDependencies": {
