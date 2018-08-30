@@ -11,25 +11,21 @@
   "bugs": {
     "url": "https://github.com/frgprotocol/market-oracle/issues"
   },
-  "license": "ISC",
-  "author": "eng@fragments.org",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/frgprotocol/market-oracle.git"
   },
+  "license": "ISC",
+  "author": "eng@fragments.org",
   "scripts": {
-    "deploy-contracts": "npx truffle  migrate --reset --network",
     "precommit": "./scripts/pre-commit.sh",
-    "lint": "npx eslint ./ --cache --fix && npx solhint contracts/*.sol",
-    "test": "./scripts/test.sh",
-    "setup-ganache": "npx start-chain ganacheUnitTest && npm run deploy-contracts ganacheUnitTest",
-    "trackGasUtilization": "npm run setup-ganache && npx truffle --network ganacheUnitTest exec test/load/gas_utilization.js save"
+    "lint": "npx eslint ./migrations ./scripts ./test ./unit *.js --cache --fix && npx solhint ./contracts/**/*.sol",
+    "test": "./scripts/test.sh"
   },
   "pre-commit": {
     "run": [
       "precommit",
-      "lint",
-      "trackGasUtilization"
+      "lint"
     ]
   },
   "dependencies": {
@@ -44,6 +40,7 @@
   },
   "devDependencies": {
     "bignumber.js": "git+https://github.com/frozeman/bignumber.js-nolookahead.git",
+    "coveralls": "^3.0.2",
     "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
     "eslint-config-mocha": "0.0.0",
@@ -63,6 +60,7 @@
     "request-promise": "^4.2.2",
     "sinon": "^4.5.0",
     "solhint": "^1.1.10",
+    "solidity-coverage": "0.5.8",
     "webpack": "^4.10.2"
   }
 }
