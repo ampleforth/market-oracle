@@ -3,6 +3,8 @@ Set of smart contracts on Ethereum deal with exchange rate reporting and aggrega
 
 [![Build Status](https://travis-ci.com/frgprotocol/market-oracle.svg?token=xxNsLhLrTiyG3pc78i5v&branch=master)](https://travis-ci.com/frgprotocol/market-oracle)
 
+[![Coverage Status](https://coveralls.io/repos/github/frgprotocol/market-oracle/badge.svg?branch=master&t=K8tHT9)](https://coveralls.io/github/frgprotocol/market-oracle?branch=master)
+
 # Getting started
 ```bash
 # Install project dependencies
@@ -20,8 +22,8 @@ npx start-chain [ganacheUnitTest|gethUnitTest]
 # Lint code
 npm run lint
 
-# track gas utilization
-npm run trackGasUtilization
+# View code coverage
+npx frg-coverage
 ```
 
 # Testing

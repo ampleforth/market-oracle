@@ -16,43 +16,35 @@ run-unit-tests(){
     $PROJECT_DIR/test/unit/*.js
 }
 
-run-load-tests(){
-  npx truffle \
-    --network $1 \
-    exec \
-    $PROJECT_DIR/test/load/gas_utilization.js verify
-}
+run-all-tests(){
+  read REF PORT < <(npx get-network-config $1)
 
-read REF GANACHE_PORT < <(npx get-network-config ganacheUnitTest)
-
-# Is chain running?
-if [ $(process-pid $GANACHE_PORT) ]
-then
-  REFRESH_GANACHE=0
-else
-  REFRESH_GANACHE=1
-fi
-
-# Stop chain
-cleanupGanache(){
-  if [ "$REFRESH_GANACHE" == "1" ]
+  if [ $(process-pid $PORT) ]
   then
-    npx stop-chain "ganacheUnitTest"
+    REFRESH=0
+  else
+    REFRESH=1
+    echo "------Start blockchain(s)"
+    npx start-chain $1
   fi
+
+  echo "------Running unit tests"
+  run-unit-tests $1
+
+  cleanup(){
+    if [ "$REFRESH" == "1" ]
+    then
+      npx stop-chain $1
+    fi
+  }
+  trap cleanup EXIT
 }
 
-echo "------Start blockchain(s)"
-npx start-chain "ganacheUnitTest"
+run-all-tests "ganacheUnitTest"
 
-echo "------Deploying contracts"
-npx truffle  migrate --reset --network "ganacheUnitTest"
-
-echo "------Running unit tests"
-run-unit-tests "ganacheUnitTest"
-
-echo "------Running gas utilization test"
-run-load-tests "ganacheUnitTest"
-
-trap cleanupGanache EXIT
+if [ "${TRAVIS_EVENT_TYPE}" == "cron" ]
+then
+  run-all-tests "gethUnitTest"
+fi
 
 exit 0

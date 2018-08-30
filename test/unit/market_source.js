@@ -1,4 +1,3 @@
-const MarketSourceFactory = artifacts.require('MarketSourceFactory.sol');
 const MarketSource = artifacts.require('MarketSource.sol');
 
 const _require = require('app-root-path').require;
@@ -10,15 +9,12 @@ function nowSeconds () {
 }
 
 contract('MarketSource', async function (accounts) {
-  let factory, source;
+  let source;
   const deployer = accounts[0];
   const A = accounts[1];
-  const gasLimit = await chain.getBlockGasLimit();
 
   before(async function () {
-    factory = await MarketSourceFactory.deployed();
-    const r = await factory.createSource('GDAX', { from: A });
-    source = MarketSource.at(r.logs[0].args.source);
+    source = await MarketSource.new('GDAX', { from: A });
   });
 
   describe('initialization', function () {
@@ -31,17 +27,17 @@ contract('MarketSource', async function (accounts) {
     describe('when reported by the owner', function () {
       describe('when reported exchangeRate is 0', function () {
         it('should revert', async function () {
-          await chain.expectEthException(
-            source.reportRate(0, 300, nowSeconds(), { from: deployer, gas: gasLimit })
-          );
+          expect(await chain.isEthException(
+            source.reportRate(0, 300, nowSeconds(), { from: deployer })
+          )).to.be.true;
         });
       });
 
       describe('when reported volume is 0', function () {
         it('should revert', async function () {
-          await chain.expectEthException(
-            source.reportRate(1050000000000000000, 0, nowSeconds(), { from: deployer, gas: gasLimit })
-          );
+          expect(await chain.isEthException(
+            source.reportRate(1050000000000000000, 0, nowSeconds(), { from: deployer })
+          )).to.be.true;
         });
       });
 
@@ -49,7 +45,7 @@ contract('MarketSource', async function (accounts) {
         let r;
         const timestamp = nowSeconds() + 3600;
         before(async function () {
-          r = await source.reportRate(1050000000000000000, 3, timestamp, { from: A, gas: gasLimit });
+          r = await source.reportRate(1050000000000000000, 3, timestamp, { from: A });
         });
         it('should update the report', async function () {
           expect((await source.getExchangeRate.call()).toNumber()).to.eq(1050000000000000000);
@@ -67,9 +63,9 @@ contract('MarketSource', async function (accounts) {
 
     describe('when NOT reported by the owner', function () {
       it('should fail', async function () {
-        await chain.expectEthException(
-          source.reportRate(1050000000000000000, 3, nowSeconds(), { from: deployer, gas: gasLimit })
-        );
+        expect(await chain.isEthException(
+          source.reportRate(1050000000000000000, 3, nowSeconds(), { from: deployer })
+        )).to.be.true;
       });
     });
   });
@@ -78,14 +74,14 @@ contract('MarketSource', async function (accounts) {
     const timestamp = nowSeconds();
     describe('when the most recent report has NOT expired', function () {
       it('should return true', async function () {
-        await source.reportRate(1000000000000000000, 1, timestamp, { from: A, gas: gasLimit });
+        await source.reportRate(1000000000000000000, 1, timestamp, { from: A });
         expect(await source.isActive.call()).to.be.true;
       });
     });
 
     describe('when the most recent report has expired', function () {
       it('should return false', async function () {
-        await source.reportRate(1000000000000000000, 1, timestamp - 3600, { from: A, gas: gasLimit });
+        await source.reportRate(1000000000000000000, 1, timestamp - 3600, { from: A });
         expect(await source.isActive.call()).to.be.false;
       });
     });
