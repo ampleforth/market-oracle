@@ -19,9 +19,9 @@ contract MarketOracle is Ownable {
     // Whitelist of sources
     MarketSource[] public whitelist;
 
-    event SourceAdded(MarketSource source);
-    event SourceRemoved(MarketSource source);
-    event SourceExpired(MarketSource source);
+    event LogSourceAdded(MarketSource source);
+    event LogSourceRemoved(MarketSource source);
+    event LogSourceExpired(MarketSource source);
 
     /**
      * @return The volume weighted average of active exchange rates and the total trade volume.
@@ -34,7 +34,7 @@ contract MarketOracle is Ownable {
 
         for (uint256 i = 0; i < whitelist.length; i++) {
             if (!whitelist[i].isActive()) {
-                emit SourceExpired(whitelist[i]);
+                emit LogSourceExpired(whitelist[i]);
                 continue;
             }
 
@@ -55,7 +55,7 @@ contract MarketOracle is Ownable {
      */
     function addSource(MarketSource source) external onlyOwner {
         whitelist.push(source);
-        emit SourceAdded(source);
+        emit LogSourceAdded(source);
     }
 
     /**
@@ -97,7 +97,7 @@ contract MarketOracle is Ownable {
     */
     function removeSource(uint8 index) private {
         require(index < whitelist.length);
-        emit SourceRemoved(whitelist[index]);
+        emit LogSourceRemoved(whitelist[index]);
         if (index != whitelist.length-1) {
             whitelist[index] = whitelist[whitelist.length-1];
         }

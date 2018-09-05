@@ -10,7 +10,7 @@ import "./MarketSource.sol";
  * @dev A factory which spawns MarketSource contracts.
  */
 contract MarketSourceFactory {
-    event SourceCreated(address owner, string name, MarketSource source);
+    event LogSourceCreated(address owner, string name, MarketSource source);
 
     /**
      * @dev Any user may call this function to create a MarketSource,
@@ -20,7 +20,7 @@ contract MarketSourceFactory {
      */
     function createSource(string name) public returns (MarketSource) {
         MarketSource source = new MarketSource(name);
-        emit SourceCreated(msg.sender, name, source);
+        emit LogSourceCreated(msg.sender, name, source);
         source.transferOwnership(msg.sender);
         return source;
     }
