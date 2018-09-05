@@ -28,7 +28,7 @@ contract('MarketOracle:addSource', async function (accounts) {
     it('should emit SourceAdded message', async function () {
       const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
       const event = logs[0];
-      expect(event.event).to.eq('SourceAdded');
+      expect(event.event).to.eq('LogSourceAdded');
       expect(event.args.source).to.eq(source.address);
     });
     it('should add source to the whitelist', async function () {
@@ -48,7 +48,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
   it('should emit SourceRemoved message', async function () {
     const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
     const event = logs[0];
-    expect(event.event).to.eq('SourceRemoved');
+    expect(event.event).to.eq('LogSourceRemoved');
     expect(event.args.source).to.eq(source.address);
   });
   it('should remove source from the whitelist', async function () {
@@ -89,7 +89,7 @@ contract('MarketOracle:getPriceAndVolume', async function (accounts) {
       const resp = await oracle.getPriceAndVolume();
       const logs = chain.decodeLogs(resp.receipt.logs, MarketOracle, oracle.address);
       const event = logs[0];
-      expect(event.event).to.eq('SourceExpired');
+      expect(event.event).to.eq('LogSourceExpired');
       expect(event.args.source).to.eq(source2.address);
     });
     it('should calculate the exchange rate', async function () {
@@ -134,7 +134,7 @@ contract('MarketOracle:removeDeadSources', async function (accounts) {
     it('should emit SourceRemoved message', async function () {
       const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
       const event = logs[0];
-      expect(event.event).to.eq('SourceRemoved');
+      expect(event.event).to.eq('LogSourceRemoved');
       expect(event.args.source).to.eq(source.address);
     });
     it('should remove that source from whitelist', async function () {

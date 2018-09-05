@@ -14,7 +14,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract MarketSource is Destructible {
     using SafeMath for uint256;
 
-    event ExchangeRateReported(uint128 exchangeRate, uint128 volume24hrs, uint64 indexed posixTimestamp);
+    event LogExchangeRateReported(uint128 exchangeRate, uint128 volume24hrs, uint64 indexed posixTimestamp);
 
     // Name of the source reporting exchange rates
     string public name;
@@ -52,7 +52,7 @@ contract MarketSource is Destructible {
         volume24hrs = _volume24hrs;
         posixTimestamp = _posixTimestamp;
 
-        emit ExchangeRateReported(exchangeRate, volume24hrs, posixTimestamp);
+        emit LogExchangeRateReported(exchangeRate, volume24hrs, posixTimestamp);
     }
 
     /**

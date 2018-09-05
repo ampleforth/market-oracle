@@ -53,7 +53,7 @@ contract('MarketSource', async function (accounts) {
         });
         it('should emit ExchangeRateReported', async function () {
           const reportEvent = r.logs[0];
-          expect(reportEvent.event).to.eq('ExchangeRateReported');
+          expect(reportEvent.event).to.eq('LogExchangeRateReported');
           expect(reportEvent.args.exchangeRate.toNumber()).to.eq(1050000000000000000);
           expect(reportEvent.args.volume24hrs.toNumber()).to.eq(3);
           expect(reportEvent.args.posixTimestamp.toNumber()).to.eq(timestamp);

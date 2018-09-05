@@ -21,7 +21,7 @@ contract('MarketSourceFactory', async function (accounts) {
     });
 
     it('should emit SourceCreated message', async function () {
-      expect(r.logs[0].event).to.eq('SourceCreated');
+      expect(r.logs[0].event).to.eq('LogSourceCreated');
       const sourceCreatedEvent = r.logs[0].args;
       expect(sourceCreatedEvent.owner).to.eq(A);
       expect(sourceCreatedEvent.name).to.eq('GDAX');
