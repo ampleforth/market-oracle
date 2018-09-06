@@ -28,7 +28,7 @@ contract('MarketSource', async function (accounts) {
       describe('when reported exchangeRate is 0', function () {
         it('should revert', async function () {
           expect(await chain.isEthException(
-            source.reportRate(0, 300, nowSeconds(), { from: deployer })
+            source.reportRate(0, 300, nowSeconds(), { from: A })
           )).to.be.true;
         });
       });
@@ -36,7 +36,7 @@ contract('MarketSource', async function (accounts) {
       describe('when reported volume is 0', function () {
         it('should revert', async function () {
           expect(await chain.isEthException(
-            source.reportRate(1050000000000000000, 0, nowSeconds(), { from: deployer })
+            source.reportRate(1050000000000000000, 0, nowSeconds(), { from: A })
           )).to.be.true;
         });
       });
