@@ -75,10 +75,17 @@ contract MarketOracle is Ownable {
      */
     function removeDeadSources() external {
         for (uint8 i = 0; i < whitelist.length; i++) {
-            if (isContractDead(address(whitelist[i]))) {
+            if (isContractDead(whitelist[i])) {
                 removeSource(i);
             }
         }
+    }
+
+    /**
+     * @return The number of sources in the whitelist
+     */
+    function whitelistCount() public view returns (uint256) {
+        return whitelist.length;
     }
 
     /**
@@ -96,7 +103,6 @@ contract MarketOracle is Ownable {
     * @dev Removes the market source at given index
     */
     function removeSource(uint8 index) private {
-        require(index < whitelist.length);
         emit LogSourceRemoved(whitelist[index]);
         if (index != whitelist.length-1) {
             whitelist[index] = whitelist[whitelist.length-1];
