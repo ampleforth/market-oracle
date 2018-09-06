@@ -32,7 +32,7 @@ contract MarketOracle is Ownable {
         uint256 volumeWeightedSum = 0;
         uint256 volume = 0;
 
-        for (uint256 i = 0; i < whitelist.length; i++) {
+        for (uint8 i = 0; i < whitelist.length; i++) {
             if (!whitelist[i].isActive()) {
                 emit LogSourceExpired(whitelist[i]);
                 continue;
@@ -74,9 +74,12 @@ contract MarketOracle is Ownable {
      * @dev Performs a linear scan on the whitelisted sources and removes any dead market sources
      */
     function removeDeadSources() external {
-        for (uint8 i = 0; i < whitelist.length; i++) {
+        uint8 i = 0;
+        while (i < whitelist.length) {
             if (isContractDead(whitelist[i])) {
                 removeSource(i);
+            } else {
+                i++;
             }
         }
     }
