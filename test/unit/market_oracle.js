@@ -5,12 +5,13 @@ const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
-let oracle, source, source2, A, B, r;
+let oracle, source, source2, deployer, A, B, r;
 function nowSeconds () {
   return parseInt(Date.now() / 1000);
 }
 
 async function setupContractsAndAccounts (accounts) {
+  deployer = accounts[0];
   A = accounts[1];
   B = accounts[2];
   oracle = await MarketOracle.new();
@@ -49,6 +50,24 @@ contract('MarketOracle:addSource', async function (accounts) {
       expect(await oracle.whitelist.call(0)).to.eq(source.address);
       expect((await oracle.whitelistCount.call()).toNumber()).to.eq(1);
     });
+  });
+});
+
+contract('MarketOracle:addSource:accessControl', async function (accounts) {
+  before(async function () {
+    await setupContractsAndAccounts(accounts);
+  });
+
+  it('should be callable by owner', async function () {
+    expect(
+      await chain.isEthException(oracle.addSource(source.address, { from: deployer }))
+    ).to.be.false;
+  });
+
+  it('should NOT be callable by non-owner', async function () {
+    expect(
+      await chain.isEthException(oracle.addSource(source.address, { from: A }))
+    ).to.be.true;
   });
 });
 
@@ -94,6 +113,24 @@ contract('MarketOracle:removeSource', async function (accounts) {
       expect(await oracle.whitelist.call(1)).to.eq(source2.address);
       expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
     });
+  });
+});
+
+contract('MarketOracle:removeSource:accessControl', async function (accounts) {
+  before(async function () {
+    await setupContractsAndAccounts(accounts);
+  });
+
+  it('should be callable by owner', async function () {
+    expect(
+      await chain.isEthException(oracle.removeSource(source.address, { from: deployer }))
+    ).to.be.false;
+  });
+
+  it('should NOT be callable by non-owner', async function () {
+    expect(
+      await chain.isEthException(oracle.removeSource(source.address, { from: A }))
+    ).to.be.true;
   });
 });
 
