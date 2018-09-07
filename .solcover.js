@@ -10,5 +10,4 @@ module.exports = {
     norpc: true,
     testCommand: 'npx truffle test ./test/unit/*.js',
     compileCommand: 'npx truffle compile',
-    skipFiles: ['Migrations.sol'],
 };
