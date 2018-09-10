@@ -8,9 +8,8 @@ import "./MarketSource.sol";
 
 /**
  * @title Market Oracle
- * @notice https://www.fragments.org/protocol/
  *
- * @dev This oracle provides price and volume data onchain using data from a whitelisted
+ * @dev Provides price and volume data onchain using data from a whitelisted
  *      set of market sources.
  */
 contract MarketOracle is Ownable {
@@ -24,9 +23,10 @@ contract MarketOracle is Ownable {
     event LogSourceExpired(MarketSource source);
 
     /**
-     * @return The volume weighted average of active exchange rates and the total trade volume.
-     *         The returned price is in an 18 decimal fixed point format.
-     *         The returned volume parameter is in a 2 decimal fixed point format.
+     * @dev Calculates the volume weighted average of exchange rates and total trade volume. 
+     *      Exchange rate is a 18 decimal fixed point number and volume is a 2 decimal fixed
+     *      point number representing the trade volume in the last 24 hours.
+     * @return The volume weighted average of active exchange rates and the total trade.
      */
     function getPriceAndVolume() external returns (uint256, uint256) {
         uint256 volumeWeightedSum = 0;
@@ -50,8 +50,8 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Adds a market source to the whitelist
-     * @param source Reference to the MarketSource contract to be whitelisted.
+     * @dev Adds a market source to the whitelist.
+     * @param source Address of the MarketSource.
      */
     function addSource(MarketSource source) external onlyOwner {
         whitelist.push(source);
@@ -59,8 +59,8 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Performs a linear scan and removes the provided market source from whitelist
-     * @param source Reference to the MarketSource contract to be delisted.
+     * @dev Removes the provided market source from the whitelist.
+     * @param source Address to the MarketSource.
      */
     function removeSource(MarketSource source) external onlyOwner {
         for (uint8 i = 0; i < whitelist.length; i++) {
@@ -71,7 +71,8 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Performs a linear scan on the whitelisted sources and removes any dead market sources
+     * @dev Expunges from the whitelist any MarketSources whose associated contracts have been
+     *      destructed.
      */
     function removeDeadSources() external {
         uint8 i = 0;
@@ -85,15 +86,15 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @return The number of sources in the whitelist
+     * @return The number of sources in the whitelist.
      */
     function whitelistCount() public view returns (uint256) {
         return whitelist.length;
     }
 
     /**
-     * @param _address Address of a smart contract
-     * @dev Checks if the contract has been destroyed
+     * @dev Checks if the contract has been destructed.
+     * @param _address Address of the smart contract.
      */
     function isContractDead(address _address) private view returns (bool) {
         uint size;
@@ -102,8 +103,8 @@ contract MarketOracle is Ownable {
     }
 
    /**
-    * @param index Index of the Market Source form the whitelist
-    * @dev Removes the market source at given index
+    * @dev Removes the MarketSource at a given index from the whitelist.
+    * @param index Index of the MarketSource.
     */
     function removeSource(uint8 index) private {
         emit LogSourceRemoved(whitelist[index]);

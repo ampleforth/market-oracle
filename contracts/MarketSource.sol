@@ -6,10 +6,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Market Source
- * @notice https://www.fragments.org/protocol/
  *
- * @dev This contract provides the UFragments-USD exchange rate and total volume of
- *      UFragments traded over the past 24-hours, as reported by a single offchain market source.
+ * @dev Provides the exchange rate 
+ *
  */
 contract MarketSource is Destructible {
     using SafeMath for uint256;
