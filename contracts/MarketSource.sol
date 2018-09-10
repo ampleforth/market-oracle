@@ -19,8 +19,8 @@ contract MarketSource is Destructible {
     // Name of the source reporting exchange rates
     string public name;
 
-    // The amount of time after which the report must be deemed expired
-    uint256 public constant REPORT_EXPIRATION_TIME = 1 hours;
+    // The number of seconds after which the report must be deemed expired
+    uint256 public reportExpirationTimeSec;
 
     // These are the three oracle values that are continuously updated.
     // Smaller types are used here locally to save on storage gas.
@@ -28,8 +28,9 @@ contract MarketSource is Destructible {
     uint128 private volume24hrs;
     uint64 private posixTimestamp;
 
-    constructor(string _name) public {
+    constructor(string _name, uint256 _reportExpirationTimeSec) public {
         name = _name;
+        reportExpirationTimeSec = _reportExpirationTimeSec;
     }
 
     /**
@@ -60,7 +61,7 @@ contract MarketSource is Destructible {
      *                     point number.
      */
     function getReport() public view returns (bool, uint256, uint256) {
-        bool isFresh = (REPORT_EXPIRATION_TIME.add(posixTimestamp) > now);
+        bool isFresh = (uint256(posixTimestamp).add(reportExpirationTimeSec) > now);
         return (
             isFresh,
             uint256(exchangeRate),

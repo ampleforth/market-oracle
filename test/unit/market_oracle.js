@@ -15,8 +15,8 @@ async function setupContractsAndAccounts (accounts) {
   A = accounts[1];
   B = accounts[2];
   oracle = await MarketOracle.new();
-  source = await MarketSource.new('GDAX', {from: A});
-  source2 = await MarketSource.new('Binance', {from: B});
+  source = await MarketSource.new('GDAX', 3600, {from: A});
+  source2 = await MarketSource.new('Binance', 3600, {from: B});
 }
 
 contract('MarketOracle:whitelistCount', async function (accounts) {
@@ -245,7 +245,7 @@ contract('MarketOracle:removeDeadSources', async function (accounts) {
   describe('when multiple sources are dead', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
-      const source3 = await MarketSource.new('OTHER_SOURCE', {from: A});
+      const source3 = await MarketSource.new('OTHER_SOURCE', 3600, {from: A});
       await oracle.addSource(source3.address);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
