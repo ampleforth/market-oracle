@@ -7,7 +7,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 /**
  * @title Market Source
  *
- * @dev Provides the exchange rate 
+ * @dev Provides the exchange rate and 24 hour trade volume for a trading pair on a market.
+ *      This can only receive data from a single trusted source, the owner address.
  *
  */
 contract MarketSource is Destructible {
@@ -32,16 +33,11 @@ contract MarketSource is Destructible {
     }
 
     /**
-     * @dev The MarketSource receives offchain information about the state of the market and
-     *      provides it to downstream onchain consumers.
-     * @param _exchangeRate The average UFragments-USD exchange rate over 24-hours.
-     *        Submitted as an fixed point number scaled by {1/10**18}.
-     *        (eg) 1500000000000000000 (1.5e18) means the rate is [1.5 USD = 1 UFragments]
-     * @param _volume24hrs The total trade volume of UFragments over 24-hours,
-     *        up to the time of observation. Submitted as a fixed point number scaled by {1/10**2}.
-     *        (eg) 12350032 means 123500.32 UFragments were being traded.
-     * @param _posixTimestamp The date and time when the observation was made. Sumbitted
-     *        as a UNIX timestamp, (ie) number of seconds since Jan 01 1970(UTC).
+     * @param _exchangeRate The average exchange rate over 24 hours represented by an 18 decimal
+     *                      fixed point number.
+     * @param _volume24hrs The trade volume in the last 24 hours represented by a 2 decimal fixed
+     *                     point number.
+     * @param _posixTimestamp The off chain timestamp of the observation.
      */
     function reportRate(uint128 _exchangeRate, uint128 _volume24hrs, uint64 _posixTimestamp) external onlyOwner {
         require(_exchangeRate > 0);
@@ -55,23 +51,20 @@ contract MarketSource is Destructible {
     }
 
     /**
-     * @return Most recently reported exchange rate as a uint256.
+     * @return Most recently reported market information.
+     *         isFresh: Is true if the last report is within the expiration window and
+     *                  false if the report has expired.
+     *         exchangeRate: The average exchange rate over 24 hours represented by an 18 decimal
+     *                      fixed point number.
+     *         volume24hrs: The trade volume in the last 24 hours represented by a 2 decimal fixed
+     *                     point number.
      */
-    function getExchangeRate() public view returns (uint256) {
-        return uint256(exchangeRate);
-    }
-
-    /**
-     * @return Most recently reported trade volume as a uint256.
-     */
-    function getVolume24hrs() public view returns (uint256) {
-        return uint256(volume24hrs);
-    }
-
-    /**
-     * @return If less than {REPORT_EXPIRATION_TIME} has passed since the most recent report.
-     */
-    function isActive() public view returns (bool) {
-        return (REPORT_EXPIRATION_TIME.add(posixTimestamp) > now);
+    function getReport() public view returns (bool, uint256, uint256) {
+        bool isFresh = (REPORT_EXPIRATION_TIME.add(posixTimestamp) > now);
+        return (
+            isFresh,
+            uint256(exchangeRate),
+            uint256(volume24hrs)
+        );
     }
 }

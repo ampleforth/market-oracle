@@ -43,19 +43,23 @@ contract('MarketSource', async function (accounts) {
 
       describe('when the exchange rate and volume are valid', function () {
         let r;
+        const rate = 1050000000000000000;
+        const volume = 103;
         const timestamp = nowSeconds() + 3600;
         before(async function () {
-          r = await source.reportRate(1050000000000000000, 3, timestamp, { from: A });
+          r = await source.reportRate(rate, volume, timestamp, { from: A });
         });
         it('should update the report', async function () {
-          expect((await source.getExchangeRate.call()).toNumber()).to.eq(1050000000000000000);
-          expect((await source.getVolume24hrs.call()).toNumber()).to.eq(3);
+          const report = await source.getReport.call();
+          expect(report[0]).to.be.true;
+          expect(report[1].toNumber()).to.eq(rate);
+          expect(report[2].toNumber()).to.eq(volume);
         });
         it('should emit ExchangeRateReported', async function () {
           const reportEvent = r.logs[0];
           expect(reportEvent.event).to.eq('LogExchangeRateReported');
-          expect(reportEvent.args.exchangeRate.toNumber()).to.eq(1050000000000000000);
-          expect(reportEvent.args.volume24hrs.toNumber()).to.eq(3);
+          expect(reportEvent.args.exchangeRate.toNumber()).to.eq(rate);
+          expect(reportEvent.args.volume24hrs.toNumber()).to.eq(volume);
           expect(reportEvent.args.posixTimestamp.toNumber()).to.eq(timestamp);
         });
       });
@@ -64,25 +68,27 @@ contract('MarketSource', async function (accounts) {
     describe('when NOT reported by the owner', function () {
       it('should fail', async function () {
         expect(await chain.isEthException(
-          source.reportRate(1050000000000000000, 3, nowSeconds(), { from: deployer })
+          source.reportRate(1050000000000000000, 103, nowSeconds(), { from: deployer })
         )).to.be.true;
       });
     });
   });
 
-  describe('isActive', function () {
+  describe('isFresh', function () {
     const timestamp = nowSeconds();
     describe('when the most recent report has NOT expired', function () {
       it('should return true', async function () {
         await source.reportRate(1000000000000000000, 1, timestamp, { from: A });
-        expect(await source.isActive.call()).to.be.true;
+        const report = await source.getReport.call();
+        expect(report[0]).to.be.true;
       });
     });
 
     describe('when the most recent report has expired', function () {
       it('should return false', async function () {
         await source.reportRate(1000000000000000000, 1, timestamp - 3600, { from: A });
-        expect(await source.isActive.call()).to.be.false;
+        const report = await source.getReport.call();
+        expect(report[0]).to.be.false;
       });
     });
   });

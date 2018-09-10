@@ -24,29 +24,31 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Calculates the volume weighted average of exchange rates and total trade volume. 
-     *      Exchange rate is a 18 decimal fixed point number and volume is a 2 decimal fixed
-     *      point number representing the trade volume in the last 24 hours.
+     *      Exchange rate is an 18 decimal fixed point number and volume is a 2 decimal fixed
+     *      point number representing the total trade volume in the last 24 hours.
      * @return The volume weighted average of active exchange rates and the total trade.
      */
     function getPriceAndVolume() external returns (uint256, uint256) {
         uint256 volumeWeightedSum = 0;
-        uint256 volume = 0;
+        uint256 volumeSum = 0;
+        uint256 partialRate = 0;
+        uint256 partialVolume = 0;
+        bool isSourceFresh = false;
 
         for (uint8 i = 0; i < whitelist.length; i++) {
-            if (!whitelist[i].isActive()) {
+            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
+
+            if (!isSourceFresh) {
                 emit LogSourceExpired(whitelist[i]);
                 continue;
             }
 
-            volumeWeightedSum = volumeWeightedSum.add(
-                whitelist[i].getExchangeRate().mul(whitelist[i].getVolume24hrs())
-            );
-
-            volume = volume.add(whitelist[i].getVolume24hrs());
+            volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
+            volumeSum = volumeSum.add(partialVolume);
         }
 
-        uint256 exchangeRate = volumeWeightedSum.div(volume);
-        return (exchangeRate, volume);
+        uint256 exchangeRate = volumeWeightedSum.div(volumeSum);
+        return (exchangeRate, volumeSum);
     }
 
     /**
@@ -60,7 +62,7 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Removes the provided market source from the whitelist.
-     * @param source Address to the MarketSource.
+     * @param source Address of the MarketSource.
      */
     function removeSource(MarketSource source) external onlyOwner {
         for (uint8 i = 0; i < whitelist.length; i++) {
@@ -71,7 +73,7 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Expunges from the whitelist any MarketSources whose associated contracts have been
+     * @dev Expunges from the whitelist any MarketSource whose associated contracts have been
      *      destructed.
      */
     function removeDeadSources() external {
