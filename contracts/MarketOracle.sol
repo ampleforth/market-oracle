@@ -68,6 +68,7 @@ contract MarketOracle is Ownable {
         for (uint8 i = 0; i < whitelist.length; i++) {
             if (whitelist[i] == source) {
                 removeSource(i);
+                break;
             }
         }
     }
