@@ -24,29 +24,31 @@ contract MarketOracle is Ownable {
     event LogSourceExpired(MarketSource source);
 
     /**
-     * @return The volume weighted average of active exchange rates and the total trade volume.
+     * @return The volume weighted average of 'fresh' exchange rates and the total trade volume.
      *         The returned price is in an 18 decimal fixed point format.
      *         The returned volume parameter is in a 2 decimal fixed point format.
      */
     function getPriceAndVolume() external returns (uint256, uint256) {
         uint256 volumeWeightedSum = 0;
-        uint256 volume = 0;
+        uint256 volumeSum = 0;
+        uint256 partialRate = 0;
+        uint256 partialVolume = 0;
+        bool isSourceFresh = false;
 
         for (uint8 i = 0; i < whitelist.length; i++) {
-            if (!whitelist[i].isActive()) {
+            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
+
+            if (!isSourceFresh) {
                 emit LogSourceExpired(whitelist[i]);
                 continue;
             }
 
-            volumeWeightedSum = volumeWeightedSum.add(
-                whitelist[i].getExchangeRate().mul(whitelist[i].getVolume24hrs())
-            );
-
-            volume = volume.add(whitelist[i].getVolume24hrs());
+            volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
+            volumeSum = volumeSum.add(partialVolume);
         }
 
-        uint256 exchangeRate = volumeWeightedSum.div(volume);
-        return (exchangeRate, volume);
+        uint256 exchangeRate = volumeWeightedSum.div(volumeSum);
+        return (exchangeRate, volumeSum);
     }
 
     /**

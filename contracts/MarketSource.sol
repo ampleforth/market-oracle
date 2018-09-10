@@ -56,23 +56,17 @@ contract MarketSource is Destructible {
     }
 
     /**
-     * @return Most recently reported exchange rate as a uint256.
+     * @return Most recently reported exchange rate information.
+     *         isFresh: If less than {REPORT_EXPIRATION_TIME} has passed since the most recent report
+     *         exchange rate as a uint256,
+     *         reported trade volume as a uint256.
      */
-    function getExchangeRate() public view returns (uint256) {
-        return uint256(exchangeRate);
-    }
-
-    /**
-     * @return Most recently reported trade volume as a uint256.
-     */
-    function getVolume24hrs() public view returns (uint256) {
-        return uint256(volume24hrs);
-    }
-
-    /**
-     * @return If less than {REPORT_EXPIRATION_TIME} has passed since the most recent report.
-     */
-    function isActive() public view returns (bool) {
-        return (REPORT_EXPIRATION_TIME.add(posixTimestamp) > now);
+    function getReport() public view returns (bool, uint256, uint256) {
+        bool isFresh = (REPORT_EXPIRATION_TIME.add(posixTimestamp) > now);
+        return (
+            isFresh,
+            uint256(exchangeRate),
+            uint256(volume24hrs)
+        );
     }
 }
