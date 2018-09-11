@@ -14,7 +14,7 @@ contract('MarketSource', async function (accounts) {
   const A = accounts[1];
 
   before(async function () {
-    source = await MarketSource.new('GDAX', { from: A });
+    source = await MarketSource.new('GDAX', 600, { from: A });
   });
 
   describe('initialization', function () {
@@ -45,7 +45,7 @@ contract('MarketSource', async function (accounts) {
         let r;
         const rate = 1050000000000000000;
         const volume = 103;
-        const timestamp = nowSeconds() + 3600;
+        const timestamp = nowSeconds() + 600;
         before(async function () {
           r = await source.reportRate(rate, volume, timestamp, { from: A });
         });
@@ -86,7 +86,7 @@ contract('MarketSource', async function (accounts) {
 
     describe('when the most recent report has expired', function () {
       it('should return false', async function () {
-        await source.reportRate(1000000000000000000, 1, timestamp - 3600, { from: A });
+        await source.reportRate(1000000000000000000, 1, timestamp - 600, { from: A });
         const report = await source.getReport.call();
         expect(report[0]).to.be.false;
       });

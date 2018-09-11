@@ -16,7 +16,7 @@ contract('MarketSourceFactory', async function (accounts) {
   describe('createSource', function () {
     let r, sourceContractAddr;
     before(async function () {
-      r = await factory.createSource('GDAX', { from: A });
+      r = await factory.createSource('GDAX', 3600, { from: A });
       sourceContractAddr = r.logs[0].args.source;
     });
 
@@ -24,7 +24,6 @@ contract('MarketSourceFactory', async function (accounts) {
       expect(r.logs[0].event).to.eq('LogSourceCreated');
       const sourceCreatedEvent = r.logs[0].args;
       expect(sourceCreatedEvent.owner).to.eq(A);
-      expect(sourceCreatedEvent.name).to.eq('GDAX');
     });
     it('should create exchange rate source contracts', async function () {
       expect(await chain.isContract(sourceContractAddr)).to.be.true;
@@ -32,6 +31,8 @@ contract('MarketSourceFactory', async function (accounts) {
     it('should transfer ownership to sender', async function () {
       const marketSource = MarketSource.at(sourceContractAddr);
       expect(await marketSource.owner.call()).to.eq(A);
+      expect(await marketSource.name.call()).to.eq('GDAX');
+      expect((await marketSource.reportExpirationTimeSec.call()).toNumber()).to.eq(3600);
     });
   });
 });
