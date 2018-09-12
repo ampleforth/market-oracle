@@ -16,14 +16,14 @@ contract MarketOracle is Ownable {
     using SafeMath for uint256;
 
     // Whitelist of sources
-    MarketSource[] public whitelist;
+    MarketSource[] public _whitelist;
 
     event LogSourceAdded(MarketSource source);
     event LogSourceRemoved(MarketSource source);
     event LogSourceExpired(MarketSource source);
 
     /**
-     * @dev Calculates the volume weighted average of exchange rates and total trade volume. 
+     * @dev Calculates the volume weighted average of exchange rates and total trade volume.
      *      Exchange rate is an 18 decimal fixed point number and volume is a 2 decimal fixed
      *      point number representing the total trade volume in the last 24 hours.
      * @return The volume weighted average of active exchange rates and the total trade.
@@ -35,11 +35,11 @@ contract MarketOracle is Ownable {
         uint256 partialVolume = 0;
         bool isSourceFresh = false;
 
-        for (uint8 i = 0; i < whitelist.length; i++) {
-            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
+        for (uint8 i = 0; i < _whitelist.length; i++) {
+            (isSourceFresh, partialRate, partialVolume) = _whitelist[i].getReport();
 
             if (!isSourceFresh) {
-                emit LogSourceExpired(whitelist[i]);
+                emit LogSourceExpired(_whitelist[i]);
                 continue;
             }
 
@@ -56,7 +56,7 @@ contract MarketOracle is Ownable {
      * @param source Address of the MarketSource.
      */
     function addSource(MarketSource source) external onlyOwner {
-        whitelist.push(source);
+        _whitelist.push(source);
         emit LogSourceAdded(source);
     }
 
@@ -65,8 +65,8 @@ contract MarketOracle is Ownable {
      * @param source Address of the MarketSource.
      */
     function removeSource(MarketSource source) external onlyOwner {
-        for (uint8 i = 0; i < whitelist.length; i++) {
-            if (whitelist[i] == source) {
+        for (uint8 i = 0; i < _whitelist.length; i++) {
+            if (_whitelist[i] == source) {
                 removeSourceAtIndex(i);
                 break;
             }
@@ -79,8 +79,8 @@ contract MarketOracle is Ownable {
      */
     function removeDestructedSources() external {
         uint8 i = 0;
-        while (i < whitelist.length) {
-            if (isContractDestructed(whitelist[i])) {
+        while (i < _whitelist.length) {
+            if (isContractDestructed(_whitelist[i])) {
                 removeSourceAtIndex(i);
             } else {
                 i++;
@@ -92,7 +92,7 @@ contract MarketOracle is Ownable {
      * @return The number of sources in the whitelist.
      */
     function whitelistSize() public view returns (uint256) {
-        return whitelist.length;
+        return _whitelist.length;
     }
 
     /**
@@ -110,10 +110,10 @@ contract MarketOracle is Ownable {
     * @param index Index of the MarketSource.
     */
     function removeSourceAtIndex(uint8 index) private {
-        emit LogSourceRemoved(whitelist[index]);
-        if (index != whitelist.length-1) {
-            whitelist[index] = whitelist[whitelist.length-1];
+        emit LogSourceRemoved(_whitelist[index]);
+        if (index != _whitelist.length-1) {
+            _whitelist[index] = _whitelist[_whitelist.length-1];
         }
-        whitelist.length--;
+        _whitelist.length--;
     }
 }
