@@ -14,7 +14,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract MarketSource is Destructible {
     using SafeMath for uint256;
 
-    event LogExchangeRateReported(uint128 exchangeRate, uint128 volume24hrs, uint64 indexed posixTimestamp);
+    event LogExchangeRateReported(uint128 exchangeRate, uint128 volume24hrs, uint64 indexed timestampSecs);
 
     // Name of the source reporting exchange rates
     string public name;
@@ -26,7 +26,7 @@ contract MarketSource is Destructible {
     // Smaller types are used here locally to save on storage gas.
     uint128 private exchangeRate;
     uint128 private volume24hrs;
-    uint64 private posixTimestamp;
+    uint64 private timestampSecs;
 
     constructor(string _name, uint256 _reportExpirationTimeSec) public {
         name = _name;
@@ -38,17 +38,17 @@ contract MarketSource is Destructible {
      *                      fixed point number.
      * @param _volume24hrs The trade volume in the last 24 hours represented by a 2 decimal fixed
      *                     point number.
-     * @param _posixTimestamp The off chain timestamp of the observation.
+     * @param _timestampSecs The off chain timestamp of the observation.
      */
-    function reportRate(uint128 _exchangeRate, uint128 _volume24hrs, uint64 _posixTimestamp) external onlyOwner {
+    function reportRate(uint128 _exchangeRate, uint128 _volume24hrs, uint64 _timestampSecs) external onlyOwner {
         require(_exchangeRate > 0);
         require(_volume24hrs > 0);
 
         exchangeRate = _exchangeRate;
         volume24hrs = _volume24hrs;
-        posixTimestamp = _posixTimestamp;
+        timestampSecs = _timestampSecs;
 
-        emit LogExchangeRateReported(exchangeRate, volume24hrs, posixTimestamp);
+        emit LogExchangeRateReported(exchangeRate, volume24hrs, timestampSecs);
     }
 
     /**
@@ -61,7 +61,7 @@ contract MarketSource is Destructible {
      *                     point number.
      */
     function getReport() public view returns (bool, uint256, uint256) {
-        bool isFresh = (uint256(posixTimestamp).add(reportExpirationTimeSec) > now);
+        bool isFresh = (uint256(timestampSecs).add(reportExpirationTimeSec) > now);
         return (
             isFresh,
             uint256(exchangeRate),
