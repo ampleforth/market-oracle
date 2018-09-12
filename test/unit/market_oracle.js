@@ -47,7 +47,7 @@ contract('MarketOracle:addSource', async function (accounts) {
       expect(event.args.source).to.eq(source.address);
     });
     it('should add source to the whitelist', async function () {
-      expect(await oracle.whitelist.call(0)).to.eq(source.address);
+      expect(await oracle._whitelist.call(0)).to.eq(source.address);
       expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
@@ -88,7 +88,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
       expect(event.args.source).to.eq(source.address);
     });
     it('should remove source from the whitelist', async function () {
-      expect(await oracle.whitelist.call(0)).to.eq(source2.address);
+      expect(await oracle._whitelist.call(0)).to.eq(source2.address);
       expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
@@ -109,8 +109,8 @@ contract('MarketOracle:removeSource', async function (accounts) {
       expect(logs).to.be.empty;
     });
     it('should NOT remove source any from the whitelist', async function () {
-      expect(await oracle.whitelist.call(0)).to.eq(source.address);
-      expect(await oracle.whitelist.call(1)).to.eq(source2.address);
+      expect(await oracle._whitelist.call(0)).to.eq(source.address);
+      expect(await oracle._whitelist.call(1)).to.eq(source2.address);
       expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
     });
   });
@@ -214,8 +214,8 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
       expect(event.args.source).to.eq(source2.address);
     });
 
-    it('should remove the destructed source from the whitelist', async function () {
-      expect(await oracle.whitelist.call(0)).to.eq(source.address);
+    it('should remove the dead source from the whitelist', async function () {
+      expect(await oracle._whitelist.call(0)).to.eq(source.address);
       expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
@@ -236,8 +236,8 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
       expect(logs).to.be.empty;
     });
     it('should NOT remove any source from the whitelist', async function () {
-      expect(await oracle.whitelist.call(0)).to.eq(source.address);
-      expect(await oracle.whitelist.call(1)).to.eq(source2.address);
+      expect(await oracle._whitelist.call(0)).to.eq(source.address);
+      expect(await oracle._whitelist.call(1)).to.eq(source2.address);
       expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
     });
   });

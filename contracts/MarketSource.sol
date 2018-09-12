@@ -17,36 +17,36 @@ contract MarketSource is Destructible {
     event LogExchangeRateReported(uint128 exchangeRate, uint128 volume24hrs, uint64 indexed timestampSecs);
 
     // Name of the source reporting exchange rates
-    string public name;
+    string public _name;
 
     // The number of seconds after which the report must be deemed expired
-    uint256 public reportExpirationTimeSec;
+    uint256 public _reportExpirationTimeSec;
 
     // These are the three oracle values that are continuously updated.
     // Smaller types are used here locally to save on storage gas.
-    uint128 private exchangeRate;
-    uint128 private volume24hrs;
-    uint64 private timestampSecs;
+    uint128 private _exchangeRate;
+    uint128 private _volume24hrs;
+    uint64 private _timestampSecs;
 
-    constructor(string _name, uint256 _reportExpirationTimeSec) public {
-        name = _name;
-        reportExpirationTimeSec = _reportExpirationTimeSec;
+    constructor(string name, uint256 reportExpirationTimeSec) public {
+        _name = name;
+        _reportExpirationTimeSec = reportExpirationTimeSec;
     }
 
     /**
-     * @param _exchangeRate The average exchange rate over 24 hours represented by an 18 decimal
+     * @param exchangeRate The average exchange rate over 24 hours represented by an 18 decimal
      *                      fixed point number.
-     * @param _volume24hrs The trade volume in the last 24 hours represented by a 2 decimal fixed
+     * @param volume24hrs The trade volume in the last 24 hours represented by a 2 decimal fixed
      *                     point number.
-     * @param _timestampSecs The off chain timestamp of the observation.
+     * @param timestampSecs The off chain timestamp of the observation.
      */
-    function reportRate(uint128 _exchangeRate, uint128 _volume24hrs, uint64 _timestampSecs) external onlyOwner {
-        require(_exchangeRate > 0);
-        require(_volume24hrs > 0);
+    function reportRate(uint128 exchangeRate, uint128 volume24hrs, uint64 timestampSecs) external onlyOwner {
+        require(exchangeRate > 0);
+        require(volume24hrs > 0);
 
-        exchangeRate = _exchangeRate;
-        volume24hrs = _volume24hrs;
-        timestampSecs = _timestampSecs;
+        _exchangeRate = exchangeRate;
+        _volume24hrs = volume24hrs;
+        _timestampSecs = timestampSecs;
 
         emit LogExchangeRateReported(exchangeRate, volume24hrs, timestampSecs);
     }
@@ -61,11 +61,11 @@ contract MarketSource is Destructible {
      *                     point number.
      */
     function getReport() public view returns (bool, uint256, uint256) {
-        bool isFresh = (uint256(timestampSecs).add(reportExpirationTimeSec) > now);
+        bool isFresh = (uint256(_timestampSecs).add(_reportExpirationTimeSec) > now);
         return (
             isFresh,
-            uint256(exchangeRate),
-            uint256(volume24hrs)
+            uint256(_exchangeRate),
+            uint256(_volume24hrs)
         );
     }
 }

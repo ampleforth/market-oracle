@@ -19,7 +19,7 @@ contract('MarketSource', async function (accounts) {
 
   describe('initialization', function () {
     it('should set the name', async function () {
-      expect(await source.name()).to.eq('GDAX');
+      expect(await source._name()).to.eq('GDAX');
     });
   });
 
