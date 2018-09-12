@@ -19,7 +19,7 @@ async function setupContractsAndAccounts (accounts) {
   source2 = await MarketSource.new('Binance', 3600, {from: B});
 }
 
-contract('MarketOracle:whitelistCount', async function (accounts) {
+contract('MarketOracle:whitelistSize', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
   });
@@ -28,7 +28,7 @@ contract('MarketOracle:whitelistCount', async function (accounts) {
     await oracle.addSource(A);
     await oracle.addSource(A);
     await oracle.addSource(A);
-    expect((await oracle.whitelistCount.call()).toNumber()).to.eq(3);
+    expect((await oracle.whitelistSize.call()).toNumber()).to.eq(3);
   });
 });
 
@@ -36,7 +36,7 @@ contract('MarketOracle:addSource', async function (accounts) {
   describe('when successful', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(0);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(0);
       r = await oracle.addSource(source.address);
     });
 
@@ -48,7 +48,7 @@ contract('MarketOracle:addSource', async function (accounts) {
     });
     it('should add source to the whitelist', async function () {
       expect(await oracle.whitelist.call(0)).to.eq(source.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(1);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
 });
@@ -77,7 +77,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
       r = await oracle.removeSource(source.address);
     });
 
@@ -89,7 +89,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     });
     it('should remove source from the whitelist', async function () {
       expect(await oracle.whitelist.call(0)).to.eq(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(1);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
 });
@@ -100,7 +100,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
       r = await oracle.removeSource(A);
     });
 
@@ -111,7 +111,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     it('should NOT remove source any from the whitelist', async function () {
       expect(await oracle.whitelist.call(0)).to.eq(source.address);
       expect(await oracle.whitelist.call(1)).to.eq(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
     });
   });
 });
@@ -134,7 +134,7 @@ contract('MarketOracle:removeSource:accessControl', async function (accounts) {
   });
 });
 
-contract('MarketOracle:getPriceAndVolume', async function (accounts) {
+contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
     await oracle.addSource(source.address);
@@ -145,14 +145,14 @@ contract('MarketOracle:getPriceAndVolume', async function (accounts) {
 
   describe('when the sources are live', function () {
     it('should calculate the combined market rate and volume', async function () {
-      const resp = await oracle.getPriceAndVolume.call();
+      const resp = await oracle.getPriceAnd24HourVolume.call();
       expect(resp[0].toNumber()).to.eq(1045880000000000000);
       expect(resp[1].toNumber()).to.eq(5);
     });
   });
 });
 
-contract('MarketOracle:getPriceAndVolume', async function (accounts) {
+contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
   describe('when one of sources has expired', function () {
     const timestamp = nowSeconds();
     before(async function () {
@@ -164,21 +164,21 @@ contract('MarketOracle:getPriceAndVolume', async function (accounts) {
     });
 
     it('should emit SourceExpired message', async function () {
-      const resp = await oracle.getPriceAndVolume();
+      const resp = await oracle.getPriceAnd24HourVolume();
       const logs = chain.decodeLogs(resp.receipt.logs, MarketOracle, oracle.address);
       const event = logs[0];
       expect(event.event).to.eq('LogSourceExpired');
       expect(event.args.source).to.eq(source2.address);
     });
     it('should calculate the exchange rate', async function () {
-      const resp = await oracle.getPriceAndVolume.call();
+      const resp = await oracle.getPriceAnd24HourVolume.call();
       expect(resp[0].toNumber()).to.eq(1053200000000000000);
       expect(resp[1].toNumber()).to.eq(2);
     });
   });
 });
 
-contract('MarketOracle:getPriceAndVolume', async function (accounts) {
+contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
   describe('when one of sources is NOT live', function () {
     const timestamp = nowSeconds();
     before(async function () {
@@ -191,20 +191,20 @@ contract('MarketOracle:getPriceAndVolume', async function (accounts) {
     });
 
     it('should fail', async function () {
-      expect(await chain.isEthException(oracle.getPriceAndVolume())).to.be.true;
+      expect(await chain.isEthException(oracle.getPriceAnd24HourVolume())).to.be.true;
     });
   });
 });
 
-contract('MarketOracle:removeDeadSources', async function (accounts) {
-  describe('when one of sources is DEAD', function () {
+contract('MarketOracle:removeDestructedSources', async function (accounts) {
+  describe('when one of sources is destructed', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
       await source2.destroy({ from: B });
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
-      r = await oracle.removeDeadSources();
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      r = await oracle.removeDestructedSources();
     });
 
     it('should emit SourceRemoved message', async function () {
@@ -214,21 +214,21 @@ contract('MarketOracle:removeDeadSources', async function (accounts) {
       expect(event.args.source).to.eq(source2.address);
     });
 
-    it('should remove the dead source from the whitelist', async function () {
+    it('should remove the destructed source from the whitelist', async function () {
       expect(await oracle.whitelist.call(0)).to.eq(source.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(1);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
 });
 
-contract('MarketOracle:removeDeadSources', async function (accounts) {
-  describe('when NONE of sources are dead', function () {
+contract('MarketOracle:removeDestructedSources', async function (accounts) {
+  describe('when NONE of sources are destructed', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
-      r = await oracle.removeDeadSources();
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      r = await oracle.removeDestructedSources();
     });
 
     it('should NOT emit SourceRemoved message', async function () {
@@ -238,11 +238,11 @@ contract('MarketOracle:removeDeadSources', async function (accounts) {
     it('should NOT remove any source from the whitelist', async function () {
       expect(await oracle.whitelist.call(0)).to.eq(source.address);
       expect(await oracle.whitelist.call(1)).to.eq(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(2);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
     });
   });
 
-  describe('when multiple sources are dead', function () {
+  describe('when multiple sources are destructed', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
       const source3 = await MarketSource.new('OTHER_SOURCE', 3600, {from: A});
@@ -251,8 +251,8 @@ contract('MarketOracle:removeDeadSources', async function (accounts) {
       await oracle.addSource(source2.address);
       await source.destroy({ from: A });
       await source2.destroy({ from: B });
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(3);
-      r = await oracle.removeDeadSources();
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(3);
+      r = await oracle.removeDestructedSources();
     });
 
     it('should emit SourceRemoved messages', async function () {
@@ -261,7 +261,7 @@ contract('MarketOracle:removeDeadSources', async function (accounts) {
       expect(logs[0].args.source).to.eq(source.address);
       expect(logs[1].event).to.eq('LogSourceRemoved');
       expect(logs[1].args.source).to.eq(source2.address);
-      expect((await oracle.whitelistCount.call()).toNumber()).to.eq(1);
+      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
     });
   });
 });

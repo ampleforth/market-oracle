@@ -60,7 +60,7 @@ contract('MarketSource', async function (accounts) {
           expect(reportEvent.event).to.eq('LogExchangeRateReported');
           expect(reportEvent.args.exchangeRate.toNumber()).to.eq(rate);
           expect(reportEvent.args.volume24hrs.toNumber()).to.eq(volume);
-          expect(reportEvent.args.posixTimestamp.toNumber()).to.eq(timestamp);
+          expect(reportEvent.args.timestampSecs.toNumber()).to.eq(timestamp);
         });
       });
     });

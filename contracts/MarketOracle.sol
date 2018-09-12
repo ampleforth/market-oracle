@@ -28,7 +28,7 @@ contract MarketOracle is Ownable {
      *      point number representing the total trade volume in the last 24 hours.
      * @return The volume weighted average of active exchange rates and the total trade.
      */
-    function getPriceAndVolume() external returns (uint256, uint256) {
+    function getPriceAnd24HourVolume() external returns (uint256, uint256) {
         uint256 volumeWeightedSum = 0;
         uint256 volumeSum = 0;
         uint256 partialRate = 0;
@@ -67,7 +67,7 @@ contract MarketOracle is Ownable {
     function removeSource(MarketSource source) external onlyOwner {
         for (uint8 i = 0; i < whitelist.length; i++) {
             if (whitelist[i] == source) {
-                removeSource(i);
+                removeSourceAtIndex(i);
                 break;
             }
         }
@@ -77,11 +77,11 @@ contract MarketOracle is Ownable {
      * @dev Expunges from the whitelist any MarketSource whose associated contracts have been
      *      destructed.
      */
-    function removeDeadSources() external {
+    function removeDestructedSources() external {
         uint8 i = 0;
         while (i < whitelist.length) {
-            if (isContractDead(whitelist[i])) {
-                removeSource(i);
+            if (isContractDestructed(whitelist[i])) {
+                removeSourceAtIndex(i);
             } else {
                 i++;
             }
@@ -91,7 +91,7 @@ contract MarketOracle is Ownable {
     /**
      * @return The number of sources in the whitelist.
      */
-    function whitelistCount() public view returns (uint256) {
+    function whitelistSize() public view returns (uint256) {
         return whitelist.length;
     }
 
@@ -99,7 +99,7 @@ contract MarketOracle is Ownable {
      * @dev Checks if the contract has been destructed.
      * @param _address Address of the smart contract.
      */
-    function isContractDead(address _address) private view returns (bool) {
+    function isContractDestructed(address _address) private view returns (bool) {
         uint size;
         assembly { size := extcodesize(_address) }
         return size == 0;
@@ -109,7 +109,7 @@ contract MarketOracle is Ownable {
     * @dev Removes the MarketSource at a given index from the whitelist.
     * @param index Index of the MarketSource.
     */
-    function removeSource(uint8 index) private {
+    function removeSourceAtIndex(uint8 index) private {
         emit LogSourceRemoved(whitelist[index]);
         if (index != whitelist.length-1) {
             whitelist[index] = whitelist[whitelist.length-1];
