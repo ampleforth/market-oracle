@@ -28,40 +28,9 @@ BlockchainCaller.prototype.sendRawToBlockchain = function (method, params) {
   });
 };
 
-BlockchainCaller.prototype.waitForSomeTime = function (duration) {
-  return this.sendRawToBlockchain('evm_increaseTime', [duration]);
-};
-
-BlockchainCaller.prototype.waitForOneBlock = function () {
-  return this.sendRawToBlockchain('evm_mine');
-};
-
-BlockchainCaller.prototype.waitForNBlocks = async function (n) {
-  for (let i = 0; i < n; i++) {
-    await this.waitForOneBlock();
-  }
-};
-
 BlockchainCaller.prototype.getUserAccounts = async function () {
   const accounts = await this.sendRawToBlockchain('eth_accounts');
   return accounts.result;
-};
-
-BlockchainCaller.prototype.snapshotChain = async function () {
-  const snapshot = await this.sendRawToBlockchain('evm_snapshot');
-  return snapshot;
-};
-
-BlockchainCaller.prototype.revertToSnapshot = async function (snapshot) {
-  const didRevert = await this.sendRawToBlockchain('evm_revert', [snapshot.result]);
-  if (!didRevert.result) throw new Error('Revert failed');
-  return didRevert.result;
-};
-
-BlockchainCaller.prototype.cleanRoom = async function (fn) {
-  const snapshot = await this.snapshotChain();
-  await fn();
-  await this.revertToSnapshot(snapshot);
 };
 
 BlockchainCaller.prototype.isEthException = async function (promise) {
@@ -81,16 +50,6 @@ BlockchainCaller.prototype.isEthException = async function (promise) {
 BlockchainCaller.prototype.getBlockGasLimit = async function () {
   const block = await this.web3.eth.getBlock('latest');
   return block.gasLimit;
-};
-
-BlockchainCaller.prototype.getTransactionMetrics = async function (hash) {
-  const txR = await this.web3.eth.getTransactionReceipt(hash);
-  const tx = await this.web3.eth.getTransaction(hash);
-  return {
-    gasUsed: txR.gasUsed,
-    gasPrice: tx.gasPrice,
-    byteCodeSize: (tx.input.length * 4 / 8)
-  };
 };
 
 BlockchainCaller.prototype.isContract = async function (address) {
