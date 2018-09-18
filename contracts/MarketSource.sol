@@ -14,7 +14,11 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract MarketSource is Destructible {
     using SafeMath for uint256;
 
-    event LogExchangeRateReported(uint128 exchangeRate, uint128 volume24hrs, uint64 indexed timestampSecs);
+    event LogExchangeRateReported(
+        uint128 exchangeRate,
+        uint128 volume24hrs,
+        uint64 indexed timestampSecs
+    );
 
     // Name of the source reporting exchange rates
     string public _name;
@@ -40,7 +44,10 @@ contract MarketSource is Destructible {
      *                     point number.
      * @param timestampSecs The off chain timestamp of the observation.
      */
-    function reportRate(uint128 exchangeRate, uint128 volume24hrs, uint64 timestampSecs) external onlyOwner {
+    function reportRate(uint128 exchangeRate, uint128 volume24hrs, uint64 timestampSecs)
+        external
+        onlyOwner
+    {
         require(exchangeRate > 0);
         require(volume24hrs > 0);
 
@@ -60,7 +67,11 @@ contract MarketSource is Destructible {
      *         volume24hrs: The trade volume in the last 24 hours represented by a 2 decimal fixed
      *                     point number.
      */
-    function getReport() public view returns (bool, uint256, uint256) {
+    function getReport()
+        public
+        view
+        returns (bool, uint256, uint256)
+    {
         bool isFresh = (uint256(_timestampSecs).add(_reportExpirationTimeSec) > now);
         return (
             isFresh,

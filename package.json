@@ -20,7 +20,7 @@
   "scripts": {
     "coverage": "npx frg-coverage",
     "precommit": "./scripts/pre-commit.sh",
-    "lint": "npx eslint ./migrations ./scripts ./test ./unit *.js --cache --fix && npx solhint ./contracts/**/*.sol",
+    "lint": "npx eslint ./migrations ./scripts ./test ./unit *.js --cache --fix && npx solhint ./contracts/*.sol",
     "test": "./scripts/test.sh"
   },
   "pre-commit": {
