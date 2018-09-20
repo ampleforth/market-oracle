@@ -41,7 +41,7 @@ contract('MarketOracle:addSource', async function (accounts) {
     });
 
     it('should emit SourceAdded message', async function () {
-      const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
+      const logs = r.logs;
       const event = logs[0];
       expect(event.event).to.eq('LogSourceAdded');
       expect(event.args.source).to.eq(source.address);
@@ -82,7 +82,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     });
 
     it('should emit SourceRemoved message', async function () {
-      const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
+      const logs = r.logs;
       const event = logs[0];
       expect(event.event).to.eq('LogSourceRemoved');
       expect(event.args.source).to.eq(source.address);
@@ -105,7 +105,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     });
 
     it('should NOT emit SourceRemoved message', async function () {
-      const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
+      const logs = r.logs;
       expect(logs).to.be.empty;
     });
     it('should NOT remove source any from the whitelist', async function () {
@@ -165,7 +165,7 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
 
     it('should emit SourceExpired message', async function () {
       const resp = await oracle.getPriceAnd24HourVolume();
-      const logs = chain.decodeLogs(resp.receipt.logs, MarketOracle, oracle.address);
+      const logs = resp.logs;
       const event = logs[0];
       expect(event.event).to.eq('LogSourceExpired');
       expect(event.args.source).to.eq(source2.address);
@@ -208,7 +208,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
     });
 
     it('should emit SourceRemoved message', async function () {
-      const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
+      const logs = r.logs;
       const event = logs[0];
       expect(event.event).to.eq('LogSourceRemoved');
       expect(event.args.source).to.eq(source2.address);
@@ -232,7 +232,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
     });
 
     it('should NOT emit SourceRemoved message', async function () {
-      const logs = chain.decodeLogs(r.receipt.logs, MarketOracle, oracle.address);
+      const logs = r.logs;
       expect(logs).to.be.empty;
     });
     it('should NOT remove any source from the whitelist', async function () {
