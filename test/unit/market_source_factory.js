@@ -5,6 +5,10 @@ const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
+require('chai')
+  .use(require('chai-bignumber')(web3.BigNumber))
+  .should();
+
 contract('MarketSourceFactory', async function (accounts) {
   let factory;
   const A = accounts[1];
@@ -32,7 +36,7 @@ contract('MarketSourceFactory', async function (accounts) {
       const marketSource = MarketSource.at(sourceContractAddr);
       expect(await marketSource.owner.call()).to.eq(A);
       expect(await marketSource._name.call()).to.eq('GDAX');
-      expect((await marketSource._reportExpirationTimeSec.call()).toNumber()).to.eq(3600);
+      (await marketSource._reportExpirationTimeSec.call()).should.be.bignumber.eq(3600);
     });
   });
 });

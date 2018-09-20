@@ -5,6 +5,10 @@ const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
+require('chai')
+  .use(require('chai-bignumber')(web3.BigNumber))
+  .should();
+
 let oracle, source, source2, deployer, A, B, r;
 function nowSeconds () {
   return parseInt(Date.now() / 1000);
@@ -28,7 +32,7 @@ contract('MarketOracle:whitelistSize', async function (accounts) {
     await oracle.addSource(A);
     await oracle.addSource(A);
     await oracle.addSource(A);
-    expect((await oracle.whitelistSize.call()).toNumber()).to.eq(3);
+    (await oracle.whitelistSize.call()).should.be.bignumber.eq(3);
   });
 });
 
@@ -36,7 +40,7 @@ contract('MarketOracle:addSource', async function (accounts) {
   describe('when successful', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(0);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(0);
       r = await oracle.addSource(source.address);
     });
 
@@ -48,7 +52,7 @@ contract('MarketOracle:addSource', async function (accounts) {
     });
     it('should add source to the whitelist', async function () {
       expect(await oracle._whitelist.call(0)).to.eq(source.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(1);
     });
   });
 });
@@ -77,7 +81,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
       r = await oracle.removeSource(source.address);
     });
 
@@ -89,7 +93,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     });
     it('should remove source from the whitelist', async function () {
       expect(await oracle._whitelist.call(0)).to.eq(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(1);
     });
   });
 });
@@ -100,7 +104,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
       r = await oracle.removeSource(A);
     });
 
@@ -111,7 +115,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     it('should NOT remove source any from the whitelist', async function () {
       expect(await oracle._whitelist.call(0)).to.eq(source.address);
       expect(await oracle._whitelist.call(1)).to.eq(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
     });
   });
 });
@@ -146,8 +150,8 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
   describe('when the sources are live', function () {
     it('should calculate the combined market rate and volume', async function () {
       const resp = await oracle.getPriceAnd24HourVolume.call();
-      expect(resp[0].toNumber()).to.eq(1045880000000000000);
-      expect(resp[1].toNumber()).to.eq(5);
+      resp[0].should.be.bignumber.eq(1045880000000000000);
+      resp[1].should.be.bignumber.eq(5);
     });
   });
 });
@@ -172,8 +176,8 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
     });
     it('should calculate the exchange rate', async function () {
       const resp = await oracle.getPriceAnd24HourVolume.call();
-      expect(resp[0].toNumber()).to.eq(1053200000000000000);
-      expect(resp[1].toNumber()).to.eq(2);
+      resp[0].should.be.bignumber.eq(1053200000000000000);
+      resp[1].should.be.bignumber.eq(2);
     });
   });
 });
@@ -203,7 +207,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
       await source2.destroy({ from: B });
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
       r = await oracle.removeDestructedSources();
     });
 
@@ -216,7 +220,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
 
     it('should remove the dead source from the whitelist', async function () {
       expect(await oracle._whitelist.call(0)).to.eq(source.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(1);
     });
   });
 });
@@ -227,7 +231,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
       await setupContractsAndAccounts(accounts);
       await oracle.addSource(source.address);
       await oracle.addSource(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
       r = await oracle.removeDestructedSources();
     });
 
@@ -238,7 +242,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
     it('should NOT remove any source from the whitelist', async function () {
       expect(await oracle._whitelist.call(0)).to.eq(source.address);
       expect(await oracle._whitelist.call(1)).to.eq(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(2);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
     });
   });
 
@@ -251,7 +255,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
       await oracle.addSource(source2.address);
       await source.destroy({ from: A });
       await source2.destroy({ from: B });
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(3);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(3);
       r = await oracle.removeDestructedSources();
     });
 
@@ -261,7 +265,7 @@ contract('MarketOracle:removeDestructedSources', async function (accounts) {
       expect(logs[0].args.source).to.eq(source.address);
       expect(logs[1].event).to.eq('LogSourceRemoved');
       expect(logs[1].args.source).to.eq(source2.address);
-      expect((await oracle.whitelistSize.call()).toNumber()).to.eq(1);
+      (await oracle.whitelistSize.call()).should.be.bignumber.eq(1);
     });
   });
 });
