@@ -4,6 +4,10 @@ const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
+require('chai')
+  .use(require('chai-bignumber')(web3.BigNumber))
+  .should();
+
 let source, A, B;
 function timeNowSeconds () {
   return parseInt(Date.now() / 1000);
@@ -25,7 +29,7 @@ contract('MarketSource:initialization', async function (accounts) {
   });
 
   it('should set the expiration time', async function () {
-    expect((await source._reportExpirationTimeSec.call()).toNumber()).to.eq(600);
+    (await source._reportExpirationTimeSec.call()).should.be.bignumber.eq(600);
   });
 });
 
@@ -62,15 +66,15 @@ contract('MarketSource:reportRate', async function (accounts) {
     it('should update the report', async function () {
       const report = await source.getReport.call();
       expect(report[0]).to.be.true;
-      expect(report[1].toNumber()).to.eq(rate);
-      expect(report[2].toNumber()).to.eq(volume);
+      report[1].should.be.bignumber.eq(rate);
+      report[2].should.be.bignumber.eq(volume);
     });
     it('should emit ExchangeRateReported', async function () {
       const reportEvent = r.logs[0];
       expect(reportEvent.event).to.eq('LogExchangeRateReported');
-      expect(reportEvent.args.exchangeRate.toNumber()).to.eq(rate);
-      expect(reportEvent.args.volume24hrs.toNumber()).to.eq(volume);
-      expect(reportEvent.args.timestampSecs.toNumber()).to.eq(timestamp);
+      reportEvent.args.exchangeRate.should.be.bignumber.eq(rate);
+      reportEvent.args.volume24hrs.should.be.bignumber.eq(volume);
+      reportEvent.args.timestampSecs.should.be.bignumber.eq(timestamp);
     });
   });
 
