@@ -19,8 +19,8 @@ contract MarketSourceFactory {
         returns (MarketSource)
     {
         MarketSource source = new MarketSource(name, reportExpirationTimeSec);
-        emit LogSourceCreated(msg.sender, source);
         source.transferOwnership(msg.sender);
+        emit LogSourceCreated(msg.sender, source);
         return source;
     }
 }
