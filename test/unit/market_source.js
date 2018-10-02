@@ -1,12 +1,18 @@
 const MarketSource = artifacts.require('MarketSource.sol');
 
 const _require = require('app-root-path').require;
+const BigNumber = web3.BigNumber;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
+
 
 require('chai')
   .use(require('chai-bignumber')(web3.BigNumber))
   .should();
+
+const RATE_1 = new BigNumber('1').mul(10 ** 18);
+const RATE_1_05 = new BigNumber('1.05').mul(10 ** 18);
+const VOLUME = new BigNumber('100000.912').mul(10 ** 18)
 
 let source, A, B;
 function timeNowSeconds () {
@@ -41,7 +47,7 @@ contract('MarketSource:reportRate', async function (accounts) {
   describe('when reported exchangeRate is 0', function () {
     it('should revert', async function () {
       expect(await chain.isEthException(
-        source.reportRate(0, 300, await timeNowSeconds(), { from: A })
+        source.reportRate(0, VOLUME, await timeNowSeconds(), { from: A })
       )).to.be.true;
     });
   });
@@ -49,39 +55,37 @@ contract('MarketSource:reportRate', async function (accounts) {
   describe('when reported volume is 0', function () {
     it('should revert', async function () {
       expect(await chain.isEthException(
-        source.reportRate(1050000000000000000, 0, await timeNowSeconds(), { from: A })
+        source.reportRate(RATE_1_05, 0, await timeNowSeconds(), { from: A })
       )).to.be.true;
     });
   });
 
   describe('when the exchange rate and volume are valid', function () {
     let r;
-    const rate = 1050000000000000000;
-    const volume = 103;
     let timestamp;
     before(async function () {
       timestamp = await timeNowSeconds();
-      r = await source.reportRate(rate, volume, timestamp, { from: A });
+      r = await source.reportRate(RATE_1_05, VOLUME, timestamp, { from: A });
     });
     it('should update the report', async function () {
       const report = await source.getReport.call();
       expect(report[0]).to.be.true;
-      report[1].should.be.bignumber.eq(rate);
-      report[2].should.be.bignumber.eq(volume);
+      report[1].should.be.bignumber.eq(RATE_1_05);
+      report[2].should.be.bignumber.eq(VOLUME);
     });
     it('should emit ExchangeRateReported', async function () {
       const reportEvent = r.logs[0];
       expect(reportEvent.event).to.eq('LogExchangeRateReported');
-      reportEvent.args.exchangeRate.should.be.bignumber.eq(rate);
-      reportEvent.args.volume24hrs.should.be.bignumber.eq(volume);
-      reportEvent.args.timestampSecs.should.be.bignumber.eq(timestamp);
+      reportEvent.args.exchangeRate.should.be.bignumber.eq(RATE_1_05);
+      reportEvent.args.volume24hrs.should.be.bignumber.eq(VOLUME);
+      reportEvent.args.timestampSec.should.be.bignumber.eq(timestamp);
     });
   });
 
   describe('when NOT reported by the owner', function () {
     it('should fail', async function () {
       expect(await chain.isEthException(
-        source.reportRate(1050000000000000000, 103, await timeNowSeconds(), { from: B })
+        source.reportRate(RATE_1_05, VOLUME, await timeNowSeconds(), { from: B })
       )).to.be.true;
     });
   });
@@ -94,7 +98,7 @@ contract('MarketSource:isFresh', function (accounts) {
 
   describe('when the most recent report is Fresh', function () {
     it('should return true', async function () {
-      await source.reportRate(1000000000000000000, 1, await timeNowSeconds(), { from: A });
+      await source.reportRate(RATE_1, VOLUME, await timeNowSeconds(), { from: A });
       const report = await source.getReport.call();
       expect(report[0]).to.be.true;
     });
@@ -102,7 +106,7 @@ contract('MarketSource:isFresh', function (accounts) {
 
   describe('when the most recent report is NOT Fresh', function () {
     it('should return false', async function () {
-      await source.reportRate(1000000000000000000, 1, (await timeNowSeconds() - 600), { from: A });
+      await source.reportRate(RATE_1, VOLUME, (await timeNowSeconds() - 600), { from: A });
       const report = await source.getReport.call();
       expect(report[0]).to.be.false;
     });
