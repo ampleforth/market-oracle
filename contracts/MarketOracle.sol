@@ -112,15 +112,15 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Checks if the contract has been destructed.
-     * @param marketSource Address of the smart contract.
+     * @param contractAddress Address of the smart contract.
      */
-    function isContractDestructed(address marketSource)
+    function isContractDestructed(address contractAddress)
         private
         view
         returns (bool)
     {
         uint256 size;
-        assembly { size := extcodesize(marketSource) }
+        assembly { size := extcodesize(contractAddress) }
         return size == 0;
     }
 
