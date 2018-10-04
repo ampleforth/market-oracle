@@ -9,8 +9,10 @@ import "./MarketSource.sol";
 /**
  * @title Market Oracle
  *
- * @dev Provides price and volume data onchain using data from a whitelisted
- *      set of market sources.
+ * @dev Provides the exchange rate and volume data onchain using data from a whitelisted
+ *      set of market source contracts.
+ *      Exchange rate is the TOKEN:TARGET rate.
+ *      Volume is a 24 hour trading volume in Token volume.
  */
 contract MarketOracle is Ownable {
     using SafeMath for uint256;
@@ -24,9 +26,9 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Exchange rate is an 18 decimal fixed point number and volume is a 2 decimal fixed
-     *      point number representing the total trade volume in the last 24 hours.
-     * @return The volume weighted average of active exchange rates and the total trade.
+     *      Expired market sources are ignored.
+     * @return exchangeRate: Volume weighted average of exchange rates.
+     *         volume: Total trade volume of the last reported 24 hours in Token volume.
      */
     function getPriceAnd24HourVolume()
         external
@@ -38,7 +40,7 @@ contract MarketOracle is Ownable {
         uint256 partialVolume = 0;
         bool isSourceFresh = false;
 
-        for (uint8 i = 0; i < _whitelist.length; i++) {
+        for (uint256 i = 0; i < _whitelist.length; i++) {
             (isSourceFresh, partialRate, partialVolume) = _whitelist[i].getReport();
 
             if (!isSourceFresh) {
@@ -50,6 +52,8 @@ contract MarketOracle is Ownable {
             volumeSum = volumeSum.add(partialVolume);
         }
 
+        // No explicit fixed point normalization is done as dividing by volumeSum normalizes
+        // to exchangeRate's format.
         uint256 exchangeRate = volumeWeightedSum.div(volumeSum);
         return (exchangeRate, volumeSum);
     }
@@ -74,7 +78,7 @@ contract MarketOracle is Ownable {
         external
         onlyOwner
     {
-        for (uint8 i = 0; i < _whitelist.length; i++) {
+        for (uint256 i = 0; i < _whitelist.length; i++) {
             if (_whitelist[i] == source) {
                 removeSourceAtIndex(i);
                 break;
@@ -89,7 +93,7 @@ contract MarketOracle is Ownable {
     function removeDestructedSources()
         external
     {
-        uint8 i = 0;
+        uint256 i = 0;
         while (i < _whitelist.length) {
             if (isContractDestructed(_whitelist[i])) {
                 removeSourceAtIndex(i);
@@ -100,7 +104,7 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @return The number of sources in the whitelist.
+     * @return The number of market sources in the whitelist.
      */
     function whitelistSize()
         public
@@ -111,24 +115,23 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @dev Checks if the contract has been destructed.
-     * @param _address Address of the smart contract.
+     * @dev Checks if a contract has been destructed.
+     * @param contractAddress Address of the contract.
      */
-    function isContractDestructed(address _address)
+    function isContractDestructed(address contractAddress)
         private
         view
         returns (bool)
     {
-        uint size;
-        assembly { size := extcodesize(_address) }
+        uint256 size;
+        assembly { size := extcodesize(contractAddress) }
         return size == 0;
     }
 
    /**
-    * @dev Removes the MarketSource at a given index from the whitelist.
-    * @param index Index of the MarketSource.
+    * @param index Index of the MarketSource to be removed from the whitelist.
     */
-    function removeSourceAtIndex(uint8 index)
+    function removeSourceAtIndex(uint256 index)
         private
     {
         emit LogSourceRemoved(_whitelist[index]);
