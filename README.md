@@ -1,11 +1,25 @@
-# Exchange Rate Contracts
-Set of smart contracts on Ethereum deal with exchange rate reporting and aggregation.
+# Market Oracle
 
-[![Build Status](https://travis-ci.com/frgprotocol/market-oracle.svg?token=xxNsLhLrTiyG3pc78i5v&branch=master)](https://travis-ci.com/frgprotocol/market-oracle)
+<img src="https://frgs3.s3.amazonaws.com/logo_centered_small.jpg" alt="Banner" width="100" />
 
+
+[![Build Status](https://travis-ci.com/frgprotocol/market-oracle.svg?token=xxNsLhLrTiyG3pc78i5v&branch=master)](https://travis-ci.com/frgprotocol/market-oracle)&nbsp;&nbsp;
 [![Coverage Status](https://coveralls.io/repos/github/frgprotocol/market-oracle/badge.svg?branch=master&t=K8tHT9)](https://coveralls.io/github/frgprotocol/market-oracle?branch=master)
 
-# Getting started
+
+This repository is a collection of [Ethereum smart contracts](http://fragments.org/docs) that enable aggregation of offchain market information from multiple sources.
+
+
+## Table of Contents
+
+- [Install](#install)
+- [Testing](#testing)
+- [Contribute](#contribute)
+- [License](#license)
+
+
+## Install
+
 ```bash
 # Install project dependencies
 npm install
@@ -14,11 +28,25 @@ npm install
 npx setup-local-chains
 ```
 
-# Useful scripts
+## Testing
+
 ``` bash
 # You can use the following command to start a local blockchain instance
 npx start-chain [ganacheUnitTest|gethUnitTest]
 
+# Run all unit tests
+npm test
+
+# Run unit tests in isolation
+npx truffle --network ganacheUnitTest test test/unit/market_source.js
+```
+
+## Contribute
+
+To report bugs within this package, please create an issue in this repository.
+When submitting code ensure that it is free of lint errors and has 100% test coverage.
+
+``` bash
 # Lint code
 npm run lint
 
@@ -26,11 +54,6 @@ npm run lint
 npm run coverage
 ```
 
-# Testing
-```
-# Run Unit Tests
-npm test
+## License
 
-# Run unit tests in isolation
-npx truffle --network ganacheUnitTest test test/test_file.js
-```
+[MIT (c) 2018 Fragments, Inc.](./LICENSE)
