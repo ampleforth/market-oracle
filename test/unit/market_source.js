@@ -5,14 +5,13 @@ const BigNumber = web3.BigNumber;
 const BlockchainCaller = _require('/util/blockchain_caller');
 const chain = new BlockchainCaller(web3);
 
-
 require('chai')
   .use(require('chai-bignumber')(web3.BigNumber))
   .should();
 
 const RATE_1 = new BigNumber('1').mul(10 ** 18);
 const RATE_1_05 = new BigNumber('1.05').mul(10 ** 18);
-const VOLUME = new BigNumber('100000.912').mul(10 ** 18)
+const VOLUME = new BigNumber('100000.912').mul(10 ** 18);
 
 let source, A, B;
 function timeNowSeconds () {

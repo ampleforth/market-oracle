@@ -54,7 +54,9 @@ contract MarketOracle is Ownable {
 
         // No explicit fixed point normalization is done as dividing by volumeSum normalizes
         // to exchangeRate's format.
-        uint256 exchangeRate = volumeWeightedSum.div(volumeSum);
+        uint256 exchangeRate = volumeSum > 0
+            ? volumeWeightedSum.div(volumeSum)
+            : 0;
         return (exchangeRate, volumeSum);
     }
 
