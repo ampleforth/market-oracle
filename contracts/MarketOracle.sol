@@ -135,7 +135,7 @@ contract MarketOracle is Ownable {
     function removeSourceAtIndex(uint256 index)
         private
     {
-        // require(_whitelist.length > 0);
+        // assert(_whitelist.length > index);
         emit LogSourceRemoved(_whitelist[index]);
         if (index != _whitelist.length-1) {
             _whitelist[index] = _whitelist[_whitelist.length-1];
