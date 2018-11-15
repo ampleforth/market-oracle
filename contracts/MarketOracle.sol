@@ -26,7 +26,9 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Expired market sources are ignored.
+     *      Expired market sources are ignored. If there has been no trade volume in the last
+     *      24hrs, then there is effectively no exchange rate and that value should be ignored by
+     *      the client.
      * @return exchangeRate: Volume weighted average of exchange rates.
      *         volume: Total trade volume of the last reported 24 hours in Token volume.
      */
