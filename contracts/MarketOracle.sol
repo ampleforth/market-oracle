@@ -129,11 +129,13 @@ contract MarketOracle is Ownable {
     }
 
    /**
+    * Whitelist must be non-empty before calling.
     * @param index Index of the MarketSource to be removed from the whitelist.
     */
     function removeSourceAtIndex(uint256 index)
         private
     {
+        // assert(_whitelist.length > index);
         emit LogSourceRemoved(_whitelist[index]);
         if (index != _whitelist.length-1) {
             _whitelist[index] = _whitelist[_whitelist.length-1];
