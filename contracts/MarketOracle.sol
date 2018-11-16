@@ -26,7 +26,9 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Expired market sources are ignored.
+     *      Expired market sources are ignored. If there has been no trade volume in the last
+     *      24hrs, then there is effectively no exchange rate and that value should be ignored by
+     *      the client.
      * @return exchangeRate: Volume weighted average of exchange rates.
      *         volume: Total trade volume of the last reported 24 hours in Token volume.
      */
@@ -54,7 +56,9 @@ contract MarketOracle is Ownable {
 
         // No explicit fixed point normalization is done as dividing by volumeSum normalizes
         // to exchangeRate's format.
-        uint256 exchangeRate = volumeWeightedSum.div(volumeSum);
+        uint256 exchangeRate = volumeSum > 0
+            ? volumeWeightedSum.div(volumeSum)
+            : 0;
         return (exchangeRate, volumeSum);
     }
 
