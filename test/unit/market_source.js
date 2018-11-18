@@ -30,11 +30,11 @@ contract('MarketSource:initialization', async function (accounts) {
   });
 
   it('should set the name', async function () {
-    expect(await source._name.call()).to.eq('GDAX');
+    expect(await source.name.call()).to.eq('GDAX');
   });
 
   it('should set the expiration time', async function () {
-    (await source._reportExpirationTimeSec.call()).should.be.bignumber.eq(600);
+    (await source.reportExpirationTimeSec.call()).should.be.bignumber.eq(600);
   });
 });
 
