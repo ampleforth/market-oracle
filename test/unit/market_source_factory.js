@@ -35,8 +35,8 @@ contract('MarketSourceFactory', async function (accounts) {
     it('should transfer ownership to sender', async function () {
       const marketSource = MarketSource.at(sourceContractAddr);
       expect(await marketSource.owner.call()).to.eq(A);
-      expect(await marketSource._name.call()).to.eq('GDAX');
-      (await marketSource._reportExpirationTimeSec.call()).should.be.bignumber.eq(3600);
+      expect(await marketSource.name.call()).to.eq('GDAX');
+      (await marketSource.reportExpirationTimeSec.call()).should.be.bignumber.eq(3600);
     });
   });
 });

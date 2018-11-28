@@ -18,7 +18,7 @@ contract MarketOracle is Ownable {
     using SafeMath for uint256;
 
     // Whitelist of sources
-    MarketSource[] public _whitelist;
+    MarketSource[] public whitelist;
 
     event LogSourceAdded(MarketSource source);
     event LogSourceRemoved(MarketSource source);
@@ -42,11 +42,11 @@ contract MarketOracle is Ownable {
         uint256 partialVolume = 0;
         bool isSourceFresh = false;
 
-        for (uint256 i = 0; i < _whitelist.length; i++) {
-            (isSourceFresh, partialRate, partialVolume) = _whitelist[i].getReport();
+        for (uint256 i = 0; i < whitelist.length; i++) {
+            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
 
             if (!isSourceFresh) {
-                emit LogSourceExpired(_whitelist[i]);
+                emit LogSourceExpired(whitelist[i]);
                 continue;
             }
 
@@ -72,7 +72,7 @@ contract MarketOracle is Ownable {
         external
         onlyOwner
     {
-        _whitelist.push(source);
+        whitelist.push(source);
         emit LogSourceAdded(source);
     }
 
@@ -84,8 +84,8 @@ contract MarketOracle is Ownable {
         external
         onlyOwner
     {
-        for (uint256 i = 0; i < _whitelist.length; i++) {
-            if (_whitelist[i] == source) {
+        for (uint256 i = 0; i < whitelist.length; i++) {
+            if (whitelist[i] == source) {
                 removeSourceAtIndex(i);
                 break;
             }
@@ -100,8 +100,8 @@ contract MarketOracle is Ownable {
         external
     {
         uint256 i = 0;
-        while (i < _whitelist.length) {
-            if (isContractDestructed(_whitelist[i])) {
+        while (i < whitelist.length) {
+            if (isContractDestructed(whitelist[i])) {
                 removeSourceAtIndex(i);
             } else {
                 i++;
@@ -117,7 +117,7 @@ contract MarketOracle is Ownable {
         view
         returns (uint256)
     {
-        return _whitelist.length;
+        return whitelist.length;
     }
 
     /**
@@ -141,11 +141,11 @@ contract MarketOracle is Ownable {
     function removeSourceAtIndex(uint256 index)
         private
     {
-        // assert(_whitelist.length > index);
-        emit LogSourceRemoved(_whitelist[index]);
-        if (index != _whitelist.length-1) {
-            _whitelist[index] = _whitelist[_whitelist.length-1];
+        // assert(whitelist.length > index);
+        emit LogSourceRemoved(whitelist[index]);
+        if (index != whitelist.length-1) {
+            whitelist[index] = whitelist[whitelist.length-1];
         }
-        _whitelist.length--;
+        whitelist.length--;
     }
 }
