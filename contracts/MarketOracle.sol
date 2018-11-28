@@ -64,6 +64,8 @@ contract MarketOracle is Ownable {
 
     /**
      * @dev Adds a market source to the whitelist.
+     * Upgradeable contracts should never be added,
+     * because the logic could be changed after the whitelisting process.
      * @param source Address of the MarketSource.
      */
     function addSource(MarketSource source)
