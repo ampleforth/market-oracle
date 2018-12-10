@@ -33,7 +33,7 @@
     "app-root-path": "^2.0.1",
     "frg-ethereum-runners": "git+ssh://git@github.com/frgprotocol/frg-ethereum-runners.git",
     "js-yaml": "^3.11.0",
-    "openzeppelin-solidity": "1.10.0",
+    "openzeppelin-solidity": "^2.0.0",
     "truffle": "^4.1.13"
   },
   "devDependencies": {

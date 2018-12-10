@@ -1,7 +1,7 @@
 pragma solidity 0.4.24;
 
-import "openzeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 /**
@@ -11,7 +11,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  *      This can only receive data from a single trusted source, the owner address.
  *
  */
-contract MarketSource is Destructible {
+contract MarketSource is Ownable {
     using SafeMath for uint256;
 
     event LogExchangeRateReported(
@@ -79,5 +79,12 @@ contract MarketSource is Destructible {
             uint256(_exchangeRate),
             uint256(_volume24hrs)
         );
+    }
+
+    /**
+     * @dev Terminates the contract and transfers eth to the owner.
+     */
+    function destroy() public onlyOwner {
+        selfdestruct(owner());
     }
 }
