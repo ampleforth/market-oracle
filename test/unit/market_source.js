@@ -111,3 +111,14 @@ contract('MarketSource:isFresh', function (accounts) {
     });
   });
 });
+
+contract('MarketSource:destroy', function (accounts) {
+  before(async function () {
+    await setupContractsAndAddresses(accounts);
+  });
+
+  it('should terminate the contract on the  blockchain', async function () {
+    await source.destroy({ from: A });
+    expect(await web3.eth.getCode(source.address)).to.eq('0x0');
+  });
+});
