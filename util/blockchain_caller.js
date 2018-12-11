@@ -53,7 +53,7 @@ BlockchainCaller.prototype.getBlockGasLimit = async function () {
 BlockchainCaller.prototype.isContract = async function (address) {
   // getCode returns '0x0' if address points to a wallet else it returns the contract bytecode
   const code = await this.web3.eth.getCode(address);
-  return (code !== '0x0');
+  return (code !== '0x0' && code !== '0x');
 };
 
 module.exports = BlockchainCaller;

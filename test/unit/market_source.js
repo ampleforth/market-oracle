@@ -119,6 +119,6 @@ contract('MarketSource:destroy', function (accounts) {
 
   it('should terminate the contract on the  blockchain', async function () {
     await source.destroy({ from: A });
-    expect(await web3.eth.getCode(source.address)).to.eq('0x0');
+    expect(await chain.isContract(source.address)).not.to.be.true;
   });
 });
