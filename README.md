@@ -1,6 +1,6 @@
 # Market Oracle
 
-[![Build Status](https://travis-ci.com/frgprotocol/market-oracle.svg?token=xxNsLhLrTiyG3pc78i5v&branch=master)](https://travis-ci.com/frgprotocol/market-oracle)&nbsp;&nbsp;
+[![Build Status](https://travis-ci.com/ampleforth/market-oracle.svg?token=xxNsLhLrTiyG3pc78i5v&branch=master)](https://travis-ci.com/ampleforth/market-oracle)&nbsp;&nbsp;
 [![Coverage Status](https://coveralls.io/repos/github/frgprotocol/market-oracle/badge.svg?branch=master&t=K8tHT9)](https://coveralls.io/github/frgprotocol/market-oracle?branch=master)
 
 
