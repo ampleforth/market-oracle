@@ -3,20 +3,20 @@
   "version": "0.0.1",
   "description": "Ethereum smart contracts to aggregate exchange rates from various sources",
   "keywords": [
-    "etheruem",
+    "ethereum",
     "smart-contracts",
     "solidity"
   ],
-  "homepage": "https://github.com/frgprotocol/market-oracle#readme",
+  "homepage": "https://github.com/ampleforth/market-oracle#readme",
   "bugs": {
-    "url": "https://github.com/frgprotocol/market-oracle/issues"
+    "url": "https://github.com/ampleforth/market-oracle/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frgprotocol/market-oracle.git"
+    "url": "git+https://github.com/ampleforth/market-oracle.git"
   },
   "license": "ISC",
-  "author": "eng@fragments.org",
+  "author": "dev-support@ampleforth.org",
   "scripts": {
     "coverage": "npx frg-coverage",
     "precommit": "./scripts/pre-commit.sh",
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
-    "frg-ethereum-runners": "git+ssh://git@github.com/frgprotocol/frg-ethereum-runners.git",
+    "frg-ethereum-runners": "git+ssh://git@github.com/ampleforth/frg-ethereum-runners.git",
     "js-yaml": "^3.11.0",
     "openzeppelin-solidity": "^2.0.0",
     "truffle": "^4.1.13"

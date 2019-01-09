@@ -1,13 +1,10 @@
 # Market Oracle
 
-<img src="https://frgs3.s3.amazonaws.com/logo_centered_small.jpg" alt="Banner" width="100" />
-
-
 [![Build Status](https://travis-ci.com/frgprotocol/market-oracle.svg?token=xxNsLhLrTiyG3pc78i5v&branch=master)](https://travis-ci.com/frgprotocol/market-oracle)&nbsp;&nbsp;
 [![Coverage Status](https://coveralls.io/repos/github/frgprotocol/market-oracle/badge.svg?branch=master&t=K8tHT9)](https://coveralls.io/github/frgprotocol/market-oracle?branch=master)
 
 
-This repository is a collection of [Ethereum smart contracts](http://fragments.org/docs) that enable aggregation of offchain market information from multiple sources.
+This repository is a collection of [Ethereum smart contracts](http://ampleforth.org/docs) that enable aggregation of offchain market information from multiple sources.
 
 
 ## Table of Contents
