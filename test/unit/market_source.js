@@ -105,7 +105,7 @@ contract('MarketSource:isFresh', function (accounts) {
 
   describe('when the most recent report is NOT Fresh', function () {
     it('should return false', async function () {
-      await source.reportRate(RATE_1, VOLUME, (await timeNowSeconds() - 600), { from: A });
+      await source.reportRate(RATE_1, VOLUME, (await timeNowSeconds() - 630), { from: A });
       const report = await source.getReport.call();
       expect(report[0]).to.be.false;
     });
