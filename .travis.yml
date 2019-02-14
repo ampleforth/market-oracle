@@ -8,14 +8,14 @@ cache:
     - node_modules
     - $(npm config get prefix)/bin/ganache-cli
 before_install:
-  - npm install -g npx
+  - #npm install -g npx
 script:
-  - ./scripts/setup-ci.sh
-  - npm run lint
-  - npm run test
-  - npx frg-coverage
+  - #./scripts/setup-ci.sh
+  - #npm run lint
+  - #npm run test
+  - #npx frg-coverage
 after_success:
-  - cat coverage/lcov.info | npx coveralls
+  - #cat coverage/lcov.info | npx coveralls
 notifications:
   email:
     - dev-support@ampleforth.org

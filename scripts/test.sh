@@ -40,6 +40,7 @@ run-all-tests(){
   trap cleanup EXIT
 }
 
+# Pausing tests #RFC
 run-all-tests "ganacheUnitTest"
 
 if [ "${TRAVIS_EVENT_TYPE}" == "cron" ]

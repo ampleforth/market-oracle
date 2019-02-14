@@ -4,6 +4,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./MarketSource.sol";
+import "./CPISource.sol";
 
 
 /**
@@ -17,12 +18,35 @@ import "./MarketSource.sol";
 contract MarketOracle is Ownable {
     using SafeMath for uint256;
 
-    // Whitelist of sources
+    // Whitelist of market sources
     MarketSource[] public whitelist;
+    CPISource public cpiSource;
 
     event LogSourceAdded(MarketSource source);
     event LogSourceRemoved(MarketSource source);
     event LogSourceExpired(MarketSource source);
+    event LogCPISourceChanged(CPISource previousSource, NewSource newSource);
+
+
+    function getInflationAdjustedPriceAnd24HourVolume()
+      external
+      returns (uint256, uint256)
+    {
+      uint256 inflation = 0;
+      bool isCPISourceFresh = false;
+      (isCPISourceFresh, inflation) =  cpiSource.getInflation();
+      require(isCPISourceFresh);
+
+      uint256 exchangeRate = 0;
+      uint256 volumeRate = 0;
+      (exchangeRate, volumeSum) = getPriceAnd24HourVolume();
+
+      return(
+        exchangeRate.div(inflation),
+        volumeSum.div(inflation)
+      );
+    }
+
 
     /**
      * @dev Calculates the volume weighted average of exchange rates and total trade volume.
@@ -33,7 +57,7 @@ contract MarketOracle is Ownable {
      *         volume: Total trade volume of the last reported 24 hours in Token volume.
      */
     function getPriceAnd24HourVolume()
-        external
+        private
         returns (uint256, uint256)
     {
         uint256 volumeWeightedSum = 0;
@@ -60,6 +84,15 @@ contract MarketOracle is Ownable {
             ? volumeWeightedSum.div(volumeSum)
             : 0;
         return (exchangeRate, volumeSum);
+    }
+
+
+    function setCPISource(CPISource newSource)
+        external
+        onlyOwner
+    {
+        emit LogCPISourceChanged(cpiSource, newSource);
+        cpiSource = newSource;
     }
 
     /**
