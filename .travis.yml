@@ -11,7 +11,7 @@ before_install:
   - npm install -g npx
 script:
   - ./scripts/setup-ci.sh
-  - npm run lint
+  - #npm run lint
   - npm run test
   - npx frg-coverage
 after_success:
