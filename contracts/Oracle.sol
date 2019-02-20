@@ -26,36 +26,43 @@ contract Oracle is Ownable {
     }
 
     function quickselect(uint256[] a, uint256 len, uint256 k) private returns (uint256) {
-      if (len == 1) {
-        return a[0];
-      }
-
-      uint256 pivot = uint256(keccak256(block.timestamp))%len;
       uint256[] memory ltPivot = new uint256[](len);
       uint256[] memory pivots = new uint256[](len);
       uint256[] memory gtPivot = new uint256[](len);
 
-      uint256 i = 0;
-      uint256 li = 0;
-      uint256 gi = 0;
-      uint256 pi = 0;
+      uint256 i;
+      uint256 pivot;
+      uint256 li;
+      uint256 gi;
+      uint256 pi;
 
-      for (; i < len; i++) {
-        if(a[i] > a[pivot]){
-          gtPivot[gi++] = a[i];
-        } else if(a[i] < a[pivot]) {
-          ltPivot[li++] = a[i];
-        } else {
-         pivots[pi++] = a[i];
+      while(true) {
+        pivot = uint256(keccak256(block.timestamp))%len;
+        i = 0;
+        li = 0;
+        gi = 0;
+        pi = 0;
+
+        for (; i < len; i++) {
+          if(a[i] > a[pivot]){
+            gtPivot[gi++] = a[i];
+          } else if(a[i] < a[pivot]) {
+            ltPivot[li++] = a[i];
+          } else {
+            pivots[pi++] = a[i];
+          }
         }
-      }
 
-      if(k < li){
-        return quickselect(ltPivot, li, k);
-      } else if(k < (li + pi)) {
-        return pivots[0];
-      } else {
-        return quickselect(gtPivot, gi, k - li - pi);
+        if(k < li){
+          len = li;
+          a = ltPivot;
+        } else if(k < (li + pi)) {
+          return pivots[0];
+        } else {
+          len = gi;
+          k = k - li - pi;
+          a = gtPivot;
+        }
       }
     }
 
