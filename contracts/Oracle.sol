@@ -30,7 +30,7 @@ contract Oracle is Ownable {
         return a[0];
       }
 
-      uint256 pivot = 1;
+      uint256 pivot = uint256(keccak256(block.timestamp))%len;
       uint256[] memory ltPivot = new uint256[](len);
       uint256[] memory pivots = new uint256[](len);
       uint256[] memory gtPivot = new uint256[](len);
