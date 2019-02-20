@@ -11,9 +11,9 @@ contract('Oracle#getMedianReport', async function (accounts) {
     const f2 = await DataFeeder.new(3600);
     const f3 = await DataFeeder.new(3600);
 
-    await f1.report(1.5e18, timeNowSeconds());
-    await f2.report(0.9e18, timeNowSeconds());
-    await f3.report(1.2e18, timeNowSeconds());
+    await f1.feed(1.5e18);
+    await f2.feed(0.9e18);
+    await f3.feed(1.2e18);
 
     const oracle = await Oracle.new();
     await oracle.addDataFeeder(f1.address);

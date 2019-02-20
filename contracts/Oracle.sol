@@ -44,16 +44,16 @@ contract Oracle is Ownable {
         pi = 0;
 
         for (; i < len; i++) {
-          if(a[i] > a[pivot]){
+          if(a[i] > a[pivot]) {
             gtPivot[gi++] = a[i];
-          } else if(a[i] < a[pivot]) {
-            ltPivot[li++] = a[i];
-          } else {
+          } else if(a[i] == a[pivot]) {
             pivots[pi++] = a[i];
+          } else {
+            ltPivot[li++] = a[i];
           }
         }
 
-        if(k < li){
+        if(k < li) {
           len = li;
           a = ltPivot;
         } else if(k < (li + pi)) {
@@ -78,7 +78,7 @@ contract Oracle is Ownable {
         uint256 j;
 
         for (; i < whitelist.length; i++) {
-            (isReportFresh, reportedData) = whitelist[i].getReport();
+            (isReportFresh, reportedData) = whitelist[i].getFeed();
             if (!isReportFresh) {
                 emit LogDataFeederExpired(whitelist[i]);
                 continue;
