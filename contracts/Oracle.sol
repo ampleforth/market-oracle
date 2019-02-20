@@ -13,13 +13,57 @@ contract Oracle is Ownable {
     event LogDataFeederRemoved(DataFeeder feeder);
     event LogDataFeederExpired(DataFeeder feeder);
 
+    function quickselectMedian(uint256[] a, uint256 len) private returns (uint256) {
+      if(len % 2 == 1){
+        return quickselect(a, len, len/2);
+      } else {
+        return (
+          quickselect(a, len, len/2 - 1)
+            .mul(quickselect(a, len, len/2))
+            .div(2)
+        );
+      }
+    }
+
+    function quickselect(uint256[] a, uint256 len, uint256 k) private returns (uint256) {
+      if (len == 1) {
+        return a[0];
+      }
+
+      uint256 pivot = 1;
+      uint256[] memory ltPivot = new uint256[](len);
+      uint256[] memory pivots = new uint256[](len);
+      uint256[] memory gtPivot = new uint256[](len);
+
+      uint256 i = 0;
+      uint256 li = 0;
+      uint256 gi = 0;
+      uint256 pi = 0;
+
+      for (; i < len; i++) {
+        if(a[i] > a[pivot]){
+          gtPivot[gi++] = a[i];
+        } else if(a[i] < a[pivot]) {
+          ltPivot[li++] = a[i];
+        } else {
+         pivots[pi++] = a[i];
+        }
+      }
+
+      if(k < li){
+        return quickselect(ltPivot, li, k);
+      } else if(k < (li + pi)) {
+        return pivots[0];
+      } else {
+        return quickselect(gtPivot, gi, k - li - pi);
+      }
+    }
+
     function getMedianReport() external returns (uint256) {
         bool isReportFresh = false;
         uint256 reportedData;
 
-        uint256 freshReportsLength = whitelist.length;
-        uint256[] memory reports = new uint256[](freshReportsLength);
-
+        uint256[] memory reports = new uint256[](whitelist.length);
 
         // TODO: Replace the following with a better sorting/median alogrithm
         // Quick select median algorithm
@@ -35,24 +79,8 @@ contract Oracle is Ownable {
             reports[j] = reportedData;
             j++;
         }
-        freshReportsLength = j;
 
-        uint256 t;
-        for (i = 0; i < freshReportsLength; i++) {
-          for (j = i + 1; j < freshReportsLength; j++) {
-            if(reports[i] > reports[j]) {
-              t = reports[i];
-              reports[i] = reports[j];
-              reports[j] = t;
-            }
-          }
-        }
-
-        if(freshReportsLength % 2 != 0){
-          return reports[freshReportsLength/2];
-        } else {
-          return reports[freshReportsLength/2].add(reports[freshReportsLength/2+1]).div(2);
-        }
+        return quickselectMedian(reports, j);
     }
 
     function addDataFeeder(DataFeeder feeder)
