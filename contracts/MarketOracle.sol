@@ -7,7 +7,7 @@ import "./MarketSource.sol";
 
 
 interface IOracle {
-    function getAggregatedData() external returns (uint256);
+    function getData() external returns (bool, uint256);
 }
 
 
@@ -33,16 +33,18 @@ contract MarketOracle is Ownable, IOracle {
      *      Expired market sources are ignored. If there has been no trade volume in the last
      *      24hrs, then there is effectively no exchange rate and that value should be ignored by
      *      the client.
-     * @return Volume weighted average of exchange rates.
+     * @return isValid: True if data is fresh and false if not.
+    *          exchangeRate: Volume weighted average of exchange rates.
      */
-    function getAggregatedData()
+    function getData()
         external
-        returns (uint256)
+        returns (bool, uint256)
     {
         uint256 volumeWeightedSum = 0;
         uint256 volumeSum = 0;
         uint256 partialRate = 0;
         uint256 partialVolume = 0;
+        bool isDataFresh = false;
         bool isSourceFresh = false;
 
         for (uint256 i = 0; i < whitelist.length; i++) {
@@ -55,14 +57,16 @@ contract MarketOracle is Ownable, IOracle {
 
             volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
             volumeSum = volumeSum.add(partialVolume);
+            isDataFresh = isDataFresh || isSourceFresh;
         }
 
-        // No explicit fixed point normalization is done as dividing by volumeSum normalizes
-        // to exchangeRate's format.
-        uint256 exchangeRate = volumeSum > 0
-            ? volumeWeightedSum.div(volumeSum)
-            : 0;
-        return exchangeRate;
+        if (isDataFresh && (volumeSum > 0)) {
+            // No explicit fixed point normalization is done as dividing by volumeSum normalizes
+            // to exchangeRate's format.
+            return (true, volumeWeightedSum.div(volumeSum));
+        } else {
+            return (false, 0);
+        }
     }
 
     /**
