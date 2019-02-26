@@ -29,12 +29,11 @@ contract MarketOracle is Ownable {
      *      Expired market sources are ignored. If there has been no trade volume in the last
      *      24hrs, then there is effectively no exchange rate and that value should be ignored by
      *      the client.
-     * @return exchangeRate: Volume weighted average of exchange rates.
-     *         volume: Total trade volume of the last reported 24 hours in Token volume.
+     * @return Volume weighted average of exchange rates.
      */
-    function getPriceAnd24HourVolume()
+    function getAggregatedData()
         external
-        returns (uint256, uint256)
+        returns (uint256)
     {
         uint256 volumeWeightedSum = 0;
         uint256 volumeSum = 0;
@@ -59,7 +58,7 @@ contract MarketOracle is Ownable {
         uint256 exchangeRate = volumeSum > 0
             ? volumeWeightedSum.div(volumeSum)
             : 0;
-        return (exchangeRate, volumeSum);
+        return exchangeRate;
     }
 
     /**
