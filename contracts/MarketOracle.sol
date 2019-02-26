@@ -44,7 +44,6 @@ contract MarketOracle is Ownable, IOracle {
         uint256 volumeSum = 0;
         uint256 partialRate = 0;
         uint256 partialVolume = 0;
-        bool isDataFresh = false;
         bool isSourceFresh = false;
 
         for (uint256 i = 0; i < whitelist.length; i++) {
@@ -57,10 +56,9 @@ contract MarketOracle is Ownable, IOracle {
 
             volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
             volumeSum = volumeSum.add(partialVolume);
-            isDataFresh = isDataFresh || isSourceFresh;
         }
 
-        if (isDataFresh && (volumeSum > 0)) {
+        if (volumeSum > 0) {
             // No explicit fixed point normalization is done as dividing by volumeSum normalizes
             // to exchangeRate's format.
             return (true, volumeWeightedSum.div(volumeSum));
