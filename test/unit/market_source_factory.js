@@ -1,5 +1,5 @@
-const MarketSourceFactory = artifacts.require('MarketSourceFactory.sol');
-const MarketSource = artifacts.require('MarketSource.sol');
+const DataProviderFactory = artifacts.require('DataProviderFactory.sol');
+const DataProvider = artifacts.require('DataProvider.sol');
 
 const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
@@ -9,34 +9,37 @@ require('chai')
   .use(require('chai-bignumber')(web3.BigNumber))
   .should();
 
-contract('MarketSourceFactory', async function (accounts) {
+contract('DataProviderFactory', async function (accounts) {
   let factory;
   const A = accounts[1];
 
   before(async function () {
-    factory = await MarketSourceFactory.new();
+    factory = await DataProviderFactory.new();
   });
 
-  describe('createSource', function () {
-    let r, sourceContractAddr;
+  describe('createProvider', function () {
+    let r, providerContractAddr;
     before(async function () {
-      r = await factory.createSource('GDAX', 3600, { from: A });
-      sourceContractAddr = r.logs[0].args.source;
+      r = await factory.createProvider('coin-market-cap', 3600, { from: A });
+      providerContractAddr = r.logs[0].args.provider;
     });
 
-    it('should emit SourceCreated message', async function () {
-      expect(r.logs[0].event).to.eq('LogSourceCreated');
-      const sourceCreatedEvent = r.logs[0].args;
-      expect(sourceCreatedEvent.owner).to.eq(A);
+    it('should create a data provider contract', async function () {
+      expect(await chain.isContract(providerContractAddr)).to.be.true;
     });
-    it('should create exchange rate source contracts', async function () {
-      expect(await chain.isContract(sourceContractAddr)).to.be.true;
+    it('should set the provider name and expiration time', async function () {
+      const dataProvider = DataProvider.at(providerContractAddr);
+      expect(await dataProvider.name.call()).to.eq('coin-market-cap');
+      (await dataProvider.reportExpirationTimeSec.call()).should.be.bignumber.eq(3600);
     });
     it('should transfer ownership to sender', async function () {
-      const marketSource = MarketSource.at(sourceContractAddr);
-      expect(await marketSource.owner.call()).to.eq(A);
-      expect(await marketSource.name.call()).to.eq('GDAX');
-      (await marketSource.reportExpirationTimeSec.call()).should.be.bignumber.eq(3600);
+      const dataProvider = DataProvider.at(providerContractAddr);
+      expect(await dataProvider.owner.call()).to.eq(A);
+    });
+    it('should emit ProviderCreated message', async function () {
+      expect(r.logs[0].event).to.eq('LogProviderCreated');
+      const providerCreatedEvent = r.logs[0].args;
+      expect(providerCreatedEvent.owner).to.eq(A);
     });
   });
 });

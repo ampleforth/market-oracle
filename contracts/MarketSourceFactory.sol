@@ -1,26 +1,27 @@
 pragma solidity 0.4.24;
 
-import "./MarketSource.sol";
+import "./DataProvider.sol";
 
 
 /**
- * @title Market Source Factory
+ * @title Data Provider Factory
  */
-contract MarketSourceFactory {
-    event LogSourceCreated(address owner, MarketSource source);
+contract DataProviderFactory {
+    event LogProviderCreated(address owner, DataProvider provider);
 
     /**
-     * @param name A human readable identifier for the source.
-     * @param reportExpirationTimeSec The number of seconds after which the market data is deemed expired.
-     * @return The address of the created MarketSource contract.
+     * @param name A human readable identifier for the provider.
+     * @param reportExpirationTimeSec The number of seconds after which the
+     *        data reported to the provider is deemed expired.
+     * @return The address of the created DataProvider contract.
      */
-    function createSource(string name, uint64 reportExpirationTimeSec)
+    function createProvider(string name, uint64 reportExpirationTimeSec)
         public
-        returns (MarketSource)
+        returns (DataProvider)
     {
-        MarketSource source = new MarketSource(name, reportExpirationTimeSec);
-        source.transferOwnership(msg.sender);
-        emit LogSourceCreated(msg.sender, source);
-        return source;
+        DataProvider provider = new DataProvider(name, reportExpirationTimeSec);
+        provider.transferOwnership(msg.sender);
+        emit LogProviderCreated(msg.sender, provider);
+        return provider;
     }
 }

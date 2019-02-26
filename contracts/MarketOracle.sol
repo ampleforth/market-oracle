@@ -3,106 +3,99 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "./MarketSource.sol";
+import "./DataProvider.sol";
 
 
 /**
- * @title Market Oracle
+ * @title Oracle
  *
- * @dev Provides the exchange rate and volume data onchain using data from a whitelisted
- *      set of market source contracts.
- *      Exchange rate is the TOKEN:TARGET rate.
- *      Volume is a 24 hour trading volume in Token volume.
+ * @dev Provides the aggregated numeric data on-chain from a whitelisted set of data provider contracts.
  */
-contract MarketOracle is Ownable {
+contract Oracle is Ownable {
     using SafeMath for uint256;
 
-    // Whitelist of sources
-    MarketSource[] public whitelist;
+    // Whitelist of data providers
+    DataProvider[] public whitelist;
 
-    event LogSourceAdded(MarketSource source);
-    event LogSourceRemoved(MarketSource source);
-    event LogSourceExpired(MarketSource source);
+    event LogProviderAdded(DataProvider provider);
+    event LogProviderRemoved(DataProvider provider);
+    event LogProviderExpired(DataProvider provider);
 
     /**
-     * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Expired market sources are ignored. If there has been no trade volume in the last
+     * @dev Calculates the volume weighted average from whitelisted data providers.
+     *      Expired data providers are ignored. If there has been no trade volume in the last
      *      24hrs, then there is effectively no exchange rate and that value should be ignored by
      *      the client.
-     * @return exchangeRate: Volume weighted average of exchange rates.
-     *         volume: Total trade volume of the last reported 24 hours in Token volume.
+     * @return The volume weighted average of data from whitelisted data providers.
      */
-    function getPriceAnd24HourVolume()
+    function getAggregatedData()
         external
-        returns (uint256, uint256)
+        returns (uint256)
     {
-        uint256 volumeWeightedSum = 0;
-        uint256 volumeSum = 0;
-        uint256 partialRate = 0;
-        uint256 partialVolume = 0;
-        bool isSourceFresh = false;
+        uint256 weightedSum = 0;
+        uint256 sumOfWeights = 0;
+        uint256 partialData = 0;
+        uint256 partialWeight = 0;
+        bool isProviderFresh = false;
 
         for (uint256 i = 0; i < whitelist.length; i++) {
-            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
+            (isProviderFresh, partialData, partialWeight) = whitelist[i].getReport();
 
-            if (!isSourceFresh) {
-                emit LogSourceExpired(whitelist[i]);
+            if (!isProviderFresh) {
+                emit LogProviderExpired(whitelist[i]);
                 continue;
             }
 
-            volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
-            volumeSum = volumeSum.add(partialVolume);
+            weightedSum = weightedSum.add(partialData.mul(partialWeight));
+            sumOfWeights = sumOfWeights.add(partialWeight);
         }
 
-        // No explicit fixed point normalization is done as dividing by volumeSum normalizes
-        // to exchangeRate's format.
-        uint256 exchangeRate = volumeSum > 0
-            ? volumeWeightedSum.div(volumeSum)
-            : 0;
-        return (exchangeRate, volumeSum);
+        // No explicit fixed point normalization is done as dividing by sumOfWeights normalizes
+        // to data's format.
+        return sumOfWeights > 0 ? weightedSum.div(sumOfWeights) : 0;
     }
 
     /**
-     * @dev Adds a market source to the whitelist.
+     * @dev Adds a data provider to the whitelist.
      * Upgradeable contracts should never be added,
      * because the logic could be changed after the whitelisting process.
-     * @param source Address of the MarketSource.
+     * @param provider Address of the DataProvider.
      */
-    function addSource(MarketSource source)
+    function addProvider(DataProvider provider)
         external
         onlyOwner
     {
-        whitelist.push(source);
-        emit LogSourceAdded(source);
+        whitelist.push(provider);
+        emit LogProviderAdded(provider);
     }
 
     /**
-     * @dev Removes the provided market source from the whitelist.
-     * @param source Address of the MarketSource.
+     * @dev Removes the provided data provider from the whitelist.
+     * @param provider Address of the DataProvider.
      */
-    function removeSource(MarketSource source)
+    function removeProvider(DataProvider provider)
         external
         onlyOwner
     {
         for (uint256 i = 0; i < whitelist.length; i++) {
-            if (whitelist[i] == source) {
-                removeSourceAtIndex(i);
+            if (whitelist[i] == provider) {
+                removeProviderAtIndex(i);
                 break;
             }
         }
     }
 
     /**
-     * @dev Expunges from the whitelist any MarketSource whose associated contracts have been
+     * @dev Expunges from the whitelist any DataProvider whose associated contracts have been
      *      destructed.
      */
-    function removeDestructedSources()
+    function removeDestructedProviders()
         external
     {
         uint256 i = 0;
         while (i < whitelist.length) {
             if (isContractDestructed(whitelist[i])) {
-                removeSourceAtIndex(i);
+                removeProviderAtIndex(i);
             } else {
                 i++;
             }
@@ -110,7 +103,7 @@ contract MarketOracle is Ownable {
     }
 
     /**
-     * @return The number of market sources in the whitelist.
+     * @return The number of data providers in the whitelist.
      */
     function whitelistSize()
         public
@@ -136,13 +129,13 @@ contract MarketOracle is Ownable {
 
    /**
     * Whitelist must be non-empty before calling.
-    * @param index Index of the MarketSource to be removed from the whitelist.
+    * @param index Index of the DataProvider to be removed from the whitelist.
     */
-    function removeSourceAtIndex(uint256 index)
+    function removeProviderAtIndex(uint256 index)
         private
     {
         // assert(whitelist.length > index);
-        emit LogSourceRemoved(whitelist[index]);
+        emit LogProviderRemoved(whitelist[index]);
         if (index != whitelist.length-1) {
             whitelist[index] = whitelist[whitelist.length-1];
         }
