@@ -6,15 +6,19 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./MarketSource.sol";
 
 
+interface IOracle {
+    function getAggregatedData() external returns (uint256);
+}
+
+
 /**
  * @title Market Oracle
  *
- * @dev Provides the exchange rate and volume data onchain using data from a whitelisted
+ * @dev Provides the aggregated exchange rate data onchain using data from a whitelisted
  *      set of market source contracts.
  *      Exchange rate is the TOKEN:TARGET rate.
- *      Volume is a 24 hour trading volume in Token volume.
  */
-contract MarketOracle is Ownable {
+contract MarketOracle is Ownable, IOracle {
     using SafeMath for uint256;
 
     // Whitelist of sources
