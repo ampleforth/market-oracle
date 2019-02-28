@@ -150,8 +150,8 @@ contract('MarketOracle:getData', async function (accounts) {
   describe('when the sources are live', function () {
     it('should calculate the combined market rate and volume', async function () {
       const resp = await oracle.getData.call();
-      expect(resp[0]).to.be.true;
-      resp[1].should.be.bignumber.eq(1045880000000000000);
+      expect(resp[1]).to.be.true;
+      resp[0].should.be.bignumber.eq(1045880000000000000);
     });
   });
 });
@@ -176,8 +176,8 @@ contract('MarketOracle:getData', async function (accounts) {
     });
     it('should calculate the exchange rate', async function () {
       const resp = await oracle.getData.call();
-      expect(resp[0]).to.be.true;
-      resp[1].should.be.bignumber.eq(1053200000000000000);
+      expect(resp[1]).to.be.true;
+      resp[0].should.be.bignumber.eq(1053200000000000000);
     });
   });
 });
@@ -206,8 +206,8 @@ contract('MarketOracle:getData', async function (accounts) {
     });
     it('should return false and 0', async function () {
       const resp = await oracle.getData.call();
-      expect(resp[0]).to.be.false;
-      resp[1].should.be.bignumber.eq(0);
+      expect(resp[1]).to.be.false;
+      resp[0].should.be.bignumber.eq(0);
     });
   });
 });

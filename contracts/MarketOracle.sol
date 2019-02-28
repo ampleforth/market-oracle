@@ -7,7 +7,7 @@ import "./MarketSource.sol";
 
 
 interface IOracle {
-    function getData() external returns (bool, uint256);
+    function getData() external returns (uint256, bool);
 }
 
 
@@ -33,12 +33,12 @@ contract MarketOracle is Ownable, IOracle {
      *      Expired market sources are ignored. If there has been no trade volume in the last
      *      24hrs, then there is effectively no exchange rate and that value should be ignored by
      *      the client.
-     * @return isValid: True if data is fresh and false if not.
-    *          exchangeRate: Volume weighted average of exchange rates.
+     * @return exchangeRate: Volume weighted average of exchange rates.
+    *          isValid: True if data is fresh and false if not.
      */
     function getData()
         external
-        returns (bool, uint256)
+        returns (uint256, bool)
     {
         uint256 volumeWeightedSum = 0;
         uint256 volumeSum = 0;
@@ -61,9 +61,9 @@ contract MarketOracle is Ownable, IOracle {
         if (volumeSum > 0) {
             // No explicit fixed point normalization is done as dividing by volumeSum normalizes
             // to exchangeRate's format.
-            return (true, volumeWeightedSum.div(volumeSum));
+            return (volumeWeightedSum.div(volumeSum), true);
         } else {
-            return (false, 0);
+            return (0, false);
         }
     }
 
