@@ -138,7 +138,7 @@ contract('MarketOracle:removeSource:accessControl', async function (accounts) {
   });
 });
 
-contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
+contract('MarketOracle:getData', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
     await oracle.addSource(source.address);
@@ -149,14 +149,14 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
 
   describe('when the sources are live', function () {
     it('should calculate the combined market rate and volume', async function () {
-      const resp = await oracle.getPriceAnd24HourVolume.call();
+      const resp = await oracle.getData.call();
+      expect(resp[1]).to.be.true;
       resp[0].should.be.bignumber.eq(1045880000000000000);
-      resp[1].should.be.bignumber.eq(5);
     });
   });
 });
 
-contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
+contract('MarketOracle:getData', async function (accounts) {
   describe('when one of sources has expired', function () {
     const timestamp = nowSeconds();
     before(async function () {
@@ -168,21 +168,21 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
     });
 
     it('should emit SourceExpired message', async function () {
-      const resp = await oracle.getPriceAnd24HourVolume();
+      const resp = await oracle.getData();
       const logs = resp.logs;
       const event = logs[0];
       expect(event.event).to.eq('LogSourceExpired');
       expect(event.args.source).to.eq(source2.address);
     });
     it('should calculate the exchange rate', async function () {
-      const resp = await oracle.getPriceAnd24HourVolume.call();
+      const resp = await oracle.getData.call();
+      expect(resp[1]).to.be.true;
       resp[0].should.be.bignumber.eq(1053200000000000000);
-      resp[1].should.be.bignumber.eq(2);
     });
   });
 });
 
-contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
+contract('MarketOracle:getData', async function (accounts) {
   describe('when all sources have expired', function () {
     const timestamp = nowSeconds();
     before(async function () {
@@ -194,7 +194,7 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
     });
 
     it('should emit 2 SourceExpired messages', async function () {
-      const resp = await oracle.getPriceAnd24HourVolume();
+      const resp = await oracle.getData();
       const logs = resp.logs;
       let event = logs[0];
       expect(event.event).to.eq('LogSourceExpired');
@@ -204,15 +204,15 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
       expect(event.event).to.eq('LogSourceExpired');
       expect(event.args.source).to.eq(source2.address);
     });
-    it('should return no volume', async function () {
-      const resp = await oracle.getPriceAnd24HourVolume.call();
+    it('should return false and 0', async function () {
+      const resp = await oracle.getData.call();
+      expect(resp[1]).to.be.false;
       resp[0].should.be.bignumber.eq(0);
-      // No requirements for exchange rate.
     });
   });
 });
 
-contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
+contract('MarketOracle:getData', async function (accounts) {
   describe('when one of sources is NOT live', function () {
     const timestamp = nowSeconds();
     before(async function () {
@@ -225,7 +225,7 @@ contract('MarketOracle:getPriceAnd24HourVolume', async function (accounts) {
     });
 
     it('should fail', async function () {
-      expect(await chain.isEthException(oracle.getPriceAnd24HourVolume())).to.be.true;
+      expect(await chain.isEthException(oracle.getData())).to.be.true;
     });
   });
 });

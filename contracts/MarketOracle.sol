@@ -6,15 +6,19 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./MarketSource.sol";
 
 
+interface IOracle {
+    function getData() external returns (uint256, bool);
+}
+
+
 /**
  * @title Market Oracle
  *
- * @dev Provides the exchange rate and volume data onchain using data from a whitelisted
+ * @dev Provides the aggregated exchange rate data onchain using data from a whitelisted
  *      set of market source contracts.
  *      Exchange rate is the TOKEN:TARGET rate.
- *      Volume is a 24 hour trading volume in Token volume.
  */
-contract MarketOracle is Ownable {
+contract MarketOracle is Ownable, IOracle {
     using SafeMath for uint256;
 
     // Whitelist of sources
@@ -30,11 +34,11 @@ contract MarketOracle is Ownable {
      *      24hrs, then there is effectively no exchange rate and that value should be ignored by
      *      the client.
      * @return exchangeRate: Volume weighted average of exchange rates.
-     *         volume: Total trade volume of the last reported 24 hours in Token volume.
+    *          isValid: True if data is fresh and false if not.
      */
-    function getPriceAnd24HourVolume()
+    function getData()
         external
-        returns (uint256, uint256)
+        returns (uint256, bool)
     {
         uint256 volumeWeightedSum = 0;
         uint256 volumeSum = 0;
@@ -54,12 +58,13 @@ contract MarketOracle is Ownable {
             volumeSum = volumeSum.add(partialVolume);
         }
 
-        // No explicit fixed point normalization is done as dividing by volumeSum normalizes
-        // to exchangeRate's format.
-        uint256 exchangeRate = volumeSum > 0
-            ? volumeWeightedSum.div(volumeSum)
-            : 0;
-        return (exchangeRate, volumeSum);
+        if (volumeSum > 0) {
+            // No explicit fixed point normalization is done as dividing by volumeSum normalizes
+            // to exchangeRate's format.
+            return (volumeWeightedSum.div(volumeSum), true);
+        } else {
+            return (0, false);
+        }
     }
 
     /**
