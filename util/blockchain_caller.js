@@ -1,4 +1,5 @@
 // A wrapper on top of web3 to help interact with an underlying blockchain
+// This is where blockchain specific interaction logic goes
 class BlockchainCaller {
   constructor (web3) {
     this._web3 = web3;
@@ -26,23 +27,19 @@ BlockchainCaller.prototype.sendRawToBlockchain = function (method, params) {
   });
 };
 
+BlockchainCaller.prototype.waitForSomeTime = async function (durationInSec) {
+  try {
+    await this.sendRawToBlockchain('evm_increaseTime', [durationInSec]);
+  } catch (e) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => resolve(), durationInSec * 1000);
+    });
+  }
+};
+
 BlockchainCaller.prototype.getUserAccounts = async function () {
   const accounts = await this.sendRawToBlockchain('eth_accounts');
   return accounts.result;
-};
-
-BlockchainCaller.prototype.isEthException = async function (promise) {
-  let msg = 'No expected ETH Exception';
-  try {
-    if (promise.then) { await promise; } else { await promise(); }
-  } catch (e) {
-    msg = e.message;
-  }
-  return (
-    msg.includes('VM Exception while processing transaction: revert') ||
-    msg.includes('VM Exception while processing transaction: invalid opcode') ||
-    msg.includes('exited with an error (status 0)')
-  );
 };
 
 BlockchainCaller.prototype.getBlockGasLimit = async function () {
@@ -50,10 +47,32 @@ BlockchainCaller.prototype.getBlockGasLimit = async function () {
   return block.gasLimit;
 };
 
-BlockchainCaller.prototype.isContract = async function (address) {
-  // getCode returns '0x0' if address points to a wallet else it returns the contract bytecode
-  const code = await this.web3.eth.getCode(address);
-  return (code !== '0x0' && code !== '0x');
+BlockchainCaller.prototype.getTransactionMetrics = async function (hash) {
+  const txR = await this.web3.eth.getTransactionReceipt(hash);
+  const tx = await this.web3.eth.getTransaction(hash);
+  return {
+    gasUsed: txR.gasUsed,
+    gasPrice: tx.gasPrice,
+    byteCodeSize: (tx.input.length * 4 / 8)
+  };
+};
+
+/*
+  Inspired loosely by Openzeppelin's assertRevert.
+  https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/test/helpers/assertRevert.js
+*/
+BlockchainCaller.prototype.isEthException = async function (promise) {
+  let msg = 'No Exception';
+  try {
+    await promise;
+  } catch (e) {
+    msg = e.message;
+  }
+  return (
+      msg.includes('VM Exception while processing transaction: revert') ||
+      msg.includes('invalid opcode') ||
+      msg.includes('exited with an error (status 0)')
+  );
 };
 
 module.exports = BlockchainCaller;

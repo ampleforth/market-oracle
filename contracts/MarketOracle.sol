@@ -3,7 +3,7 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "./MarketSource.sol";
+import "./lib/Select.sol";
 
 
 interface IOracle {
@@ -14,102 +14,110 @@ interface IOracle {
 /**
  * @title Market Oracle
  *
- * @dev Provides the aggregated exchange rate data onchain using data from a whitelisted
- *      set of market source contracts.
- *      Exchange rate is the TOKEN:TARGET rate.
+ * @dev Provides the aggregated rate data onchain using data from a whitelisted
+ *      set of providers.
  */
 contract MarketOracle is Ownable, IOracle {
     using SafeMath for uint256;
 
-    // Whitelist of sources
-    MarketSource[] public whitelist;
+    struct Report {
+        uint256 timestamp;
+        uint256 payload;
+    }
 
-    event LogSourceAdded(MarketSource source);
-    event LogSourceRemoved(MarketSource source);
-    event LogSourceExpired(MarketSource source);
+    address [] public whitelist;
+    mapping (address => Report) public reportsMap;
 
-    /**
-     * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Expired market sources are ignored. If there has been no trade volume in the last
-     *      24hrs, then there is effectively no exchange rate and that value should be ignored by
-     *      the client.
-     * @return exchangeRate: Volume weighted average of exchange rates.
-    *          isValid: True if data is fresh and false if not.
-     */
+    event LogSourceAdded(address source);
+    event LogSourceRemoved(address source);
+    event LogSourceExpired(address source);
+
+
+    // The number of seconds after which the report must be deemed expired.
+    uint256 public reportExpirationTimeSec = 6 hours;
+
+    uint256 public minimumProviders = 1;
+
+    function setReportExpirationTimeSec(uint256 reportExpirationTimeSec_)
+    external
+    onlyOwner
+    {
+        require(reportExpirationTimeSec_ > 0);
+        reportExpirationTimeSec = reportExpirationTimeSec_;
+    }
+
+    function setMinimumProviders(uint256 minimumProviders_)
+    external
+    onlyOwner
+    {
+        require(minimumProviders_ > 0);
+        minimumProviders = minimumProviders_;
+    }
+
+    function pushReport(uint256 payload) external
+    {
+        address sender = msg.sender;
+        require(reportsMap[sender].timestamp > 0);
+        reportsMap[sender].timestamp = now;
+        reportsMap[sender].payload = payload;
+    }
+
     function getData()
         external
         returns (uint256, bool)
     {
-        uint256 volumeWeightedSum = 0;
-        uint256 volumeSum = 0;
-        uint256 partialRate = 0;
-        uint256 partialVolume = 0;
-        bool isSourceFresh = false;
+        uint256 reportsCount = whitelist.length;
+        uint256[] memory validReports = new uint256[](reportsCount);
+        uint256 size = 0;
+        uint256 validTimestampLimit =  now.sub(reportExpirationTimeSec);
 
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
-
-            if (!isSourceFresh) {
-                emit LogSourceExpired(whitelist[i]);
-                continue;
+        for (uint256 i = 0; i < reportsCount; i++) {
+            address providerAddress = whitelist[i];
+            if (validTimestampLimit <= reportsMap[providerAddress].timestamp) {
+                validReports[size++] = reportsMap[providerAddress].payload;
+            } else {
+                emit LogSourceExpired(providerAddress);
             }
-
-            volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
-            volumeSum = volumeSum.add(partialVolume);
         }
 
-        if (volumeSum > 0) {
-            // No explicit fixed point normalization is done as dividing by volumeSum normalizes
-            // to exchangeRate's format.
-            return (volumeWeightedSum.div(volumeSum), true);
-        } else {
+        if (size < minimumProviders) {
             return (0, false);
         }
+        uint256 median =  Select.computeMedian(validReports, size);
+        return (median, true);
     }
 
     /**
-     * @dev Adds a market source to the whitelist.
-     * Upgradeable contracts should never be added,
-     * because the logic could be changed after the whitelisting process.
-     * @param source Address of the MarketSource.
+     * @dev Adds a provider to the whitelist.
+     * @param provider Address of the provider.
      */
-    function addSource(MarketSource source)
+    function addSource(address provider)
         external
         onlyOwner
     {
-        whitelist.push(source);
-        emit LogSourceAdded(source);
+        require(reportsMap[provider].timestamp == 0);
+        whitelist.push(provider);
+        reportsMap[provider].timestamp = 1;
+        emit LogSourceAdded(provider);
     }
 
     /**
-     * @dev Removes the provided market source from the whitelist.
-     * @param source Address of the MarketSource.
+     * @dev Removes a provider from the whitelist.
+     * @param provider Address of the provider.
      */
-    function removeSource(MarketSource source)
-        external
+    function removeSource(address provider)
+        public
         onlyOwner
     {
+        delete reportsMap[provider];
         for (uint256 i = 0; i < whitelist.length; i++) {
-            if (whitelist[i] == source) {
-                removeSourceAtIndex(i);
+            if (whitelist[i] == provider) {
+                if (i != whitelist.length-1) {
+                    whitelist[i] = whitelist[whitelist.length-1];
+                }
+                whitelist.length--;
+                emit LogSourceRemoved(provider);
                 break;
-            }
-        }
-    }
-
-    /**
-     * @dev Expunges from the whitelist any MarketSource whose associated contracts have been
-     *      destructed.
-     */
-    function removeDestructedSources()
-        external
-    {
-        uint256 i = 0;
-        while (i < whitelist.length) {
-            if (isContractDestructed(whitelist[i])) {
-                removeSourceAtIndex(i);
-            } else {
-                i++;
             }
         }
     }
@@ -123,34 +131,5 @@ contract MarketOracle is Ownable, IOracle {
         returns (uint256)
     {
         return whitelist.length;
-    }
-
-    /**
-     * @dev Checks if a contract has been destructed.
-     * @param contractAddress Address of the contract.
-     */
-    function isContractDestructed(address contractAddress)
-        private
-        view
-        returns (bool)
-    {
-        uint256 size;
-        assembly { size := extcodesize(contractAddress) }
-        return size == 0;
-    }
-
-   /**
-    * Whitelist must be non-empty before calling.
-    * @param index Index of the MarketSource to be removed from the whitelist.
-    */
-    function removeSourceAtIndex(uint256 index)
-        private
-    {
-        // assert(whitelist.length > index);
-        emit LogSourceRemoved(whitelist[index]);
-        if (index != whitelist.length-1) {
-            whitelist[index] = whitelist[whitelist.length-1];
-        }
-        whitelist.length--;
     }
 }

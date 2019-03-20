@@ -8,5 +8,10 @@ module.exports = {
   },
   mocha: {
     enableTimeouts: false
+  },
+  compilers: {
+    solc: {
+      version: '0.4.24'
+    }
   }
 };
