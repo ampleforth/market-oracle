@@ -28,10 +28,10 @@ contract('MarketOracle:GasTests', async function (accounts) {
     before(async function () {
         await setupContractsAndAccounts(accounts);
         let count = 10;
-        list = Array.from({length: count}, () => Math.floor(Math.random() * 10**18))
+        list = Array.from({length: count}, () => Math.floor(Math.random() * 10**18));
 
         for (let i = 0; i < count; i++) {
-            r = await oracle.addSource(accounts[i+1], { from: accounts[0] } );
+            r = await oracle.addSource(accounts[i+1], { from: accounts[0] });
             r = await oracle.pushReport(list[i], { from: accounts[i+1] });
             console.log("Initial pushReport() gas:", r.receipt.gasUsed);
         }
