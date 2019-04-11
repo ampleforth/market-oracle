@@ -68,11 +68,9 @@ BlockchainCaller.prototype.isEthException = async function (promise) {
   } catch (e) {
     msg = e.message;
   }
-  return (
-      msg.includes('VM Exception while processing transaction: revert') ||
-      msg.includes('invalid opcode') ||
+  return msg.includes('VM Exception while processing transaction: revert') ||
+      msg.includes('VM Exception while processing transaction: invalid opcode') ||
       msg.includes('exited with an error (status 0)')
-  );
 };
 
 module.exports = BlockchainCaller;

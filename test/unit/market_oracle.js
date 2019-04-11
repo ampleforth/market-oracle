@@ -51,30 +51,26 @@ contract('MarketOracle:addSource', async function (accounts) {
     it('should add source to the whitelist', async function () {
       (await oracle.whitelistSize.call()).should.be.bignumber.eq(1);
     });
-    it('shouldnot add an existing source to the whitelist', async function () {
+    it('should not add an existing source to the whitelist', async function () {
       expect(
-          await chain.isEthException(oracle.addSource(A, { from: deployer }))
+        await chain.isEthException(oracle.addSource(A, { from: deployer }))
       ).to.be.true;
     });
   });
 });
 
 contract('MarketOracle:pushReport', async function (accounts) {
-  describe('when successful', function () {
-    before(async function () {
-      await setupContractsAndAccounts(accounts);
-    });
-
-    it('should not push to non-whitelisted source', async function () {
-      expect(
-          await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))
-      ).to.be.true;
-      oracle.addSource(A, { from: deployer });
-      await oracle.pushReport(1000000000000000000, { from: A });
-    });
+  before(async function () {
+    await setupContractsAndAccounts(accounts);
+  });
+  it('should only push from authorized source', async function () {
+    expect(
+      await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))
+    ).to.be.true;
+    oracle.addSource(A, { from: deployer });
+    await oracle.pushReport(1000000000000000000, { from: A });
   });
 });
-
 
 contract('MarketOracle:addSource:accessControl', async function (accounts) {
   before(async function () {
@@ -113,7 +109,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
     it('should remove source from the whitelist', async function () {
       (await oracle.whitelistSize.call()).should.be.bignumber.eq(1);
       expect(
-          await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))
+        await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))
       ).to.be.true;
       await oracle.pushReport(1000000000000000000, { from: B });
     });
@@ -128,7 +124,7 @@ contract('MarketOracle:removeSource', async function (accounts) {
       await oracle.addSource(B);
       (await oracle.whitelistSize.call()).should.be.bignumber.eq(2);
       expect(
-          await chain.isEthException(oracle.removeSource(C, { from: deployer }))
+        await chain.isEthException(oracle.removeSource(C, { from: deployer }))
       ).to.be.true;
     });
   });
@@ -161,7 +157,6 @@ contract('MarketOracle:getData', async function (accounts) {
     await oracle.addSource(C);
     await oracle.addSource(D);
 
-
     await oracle.pushReport(1000000000000000000, { from: D });
     await oracle.pushReport(1041000000000000000, { from: B });
     await oracle.pushReport(1053200000000000000, { from: A });
@@ -191,7 +186,6 @@ contract('MarketOracle:getData', async function (accounts) {
       await oracle.pushReport(1041000000000000000, { from: B });
       await oracle.pushReport(1000000000000000000, { from: D });
       await oracle.pushReport(1053200000000000000, { from: A });
-
     });
 
     it('should emit SourceExpired message', async function () {

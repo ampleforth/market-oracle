@@ -19,14 +19,15 @@ interface IOracle {
  */
 contract MarketOracle is Ownable, IOracle {
     using SafeMath for uint256;
+    using Select for uint256[];
 
     struct Report {
         uint256 timestamp;
         uint256 payload;
     }
 
-    address [] public whitelist;
-    mapping (address => Report) public reportsMap;
+    address[] public providers;
+    mapping (address => Report) public providerReports;
 
     event LogSourceAdded(address source);
     event LogSourceRemoved(address source);
@@ -57,24 +58,24 @@ contract MarketOracle is Ownable, IOracle {
     function pushReport(uint256 payload) external
     {
         address sender = msg.sender;
-        require(reportsMap[sender].timestamp > 0);
-        reportsMap[sender].timestamp = now;
-        reportsMap[sender].payload = payload;
+        require(providerReports[sender].timestamp > 0);
+        providerReports[sender].timestamp = now;
+        providerReports[sender].payload = payload;
     }
 
     function getData()
         external
         returns (uint256, bool)
     {
-        uint256 reportsCount = whitelist.length;
+        uint256 reportsCount = providers.length;
         uint256[] memory validReports = new uint256[](reportsCount);
         uint256 size = 0;
-        uint256 validTimestampLimit =  now.sub(reportExpirationTimeSec);
+        uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
 
         for (uint256 i = 0; i < reportsCount; i++) {
-            address providerAddress = whitelist[i];
-            if (validTimestampLimit <= reportsMap[providerAddress].timestamp) {
-                validReports[size++] = reportsMap[providerAddress].payload;
+            address providerAddress = providers[i];
+            if (minValidTimestamp <= providerReports[providerAddress].timestamp) {
+                validReports[size++] = providerReports[providerAddress].payload;
             } else {
                 emit LogSourceExpired(providerAddress);
             }
@@ -83,8 +84,8 @@ contract MarketOracle is Ownable, IOracle {
         if (size < minimumProviders) {
             return (0, false);
         }
-        uint256 median =  Select.computeMedian(validReports, size);
-        return (median, true);
+
+        return (validReports.computeMedian(size), true);
     }
 
     /**
@@ -95,9 +96,9 @@ contract MarketOracle is Ownable, IOracle {
         external
         onlyOwner
     {
-        require(reportsMap[provider].timestamp == 0);
-        whitelist.push(provider);
-        reportsMap[provider].timestamp = 1;
+        require(providerReports[provider].timestamp == 0);
+        providers.push(provider);
+        providerReports[provider].timestamp = 1;
         emit LogSourceAdded(provider);
     }
 
@@ -109,13 +110,13 @@ contract MarketOracle is Ownable, IOracle {
         public
         onlyOwner
     {
-        delete reportsMap[provider];
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            if (whitelist[i] == provider) {
-                if (i != whitelist.length-1) {
-                    whitelist[i] = whitelist[whitelist.length-1];
+        delete providerReports[provider];
+        for (uint256 i = 0; i < providers.length; i++) {
+            if (providers[i] == provider) {
+                if (i != providers.length-1) {
+                    providers[i] = providers[providers.length-1];
                 }
-                whitelist.length--;
+                providers.length--;
                 emit LogSourceRemoved(provider);
                 break;
             }
@@ -130,6 +131,6 @@ contract MarketOracle is Ownable, IOracle {
         view
         returns (uint256)
     {
-        return whitelist.length;
+        return providers.length;
     }
 }
