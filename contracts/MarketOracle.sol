@@ -12,29 +12,31 @@ interface IOracle {
 
 
 /**
- * @title Market Oracle
+ * @title Median Oracle
  *
- * @dev Provides the aggregated rate data onchain using data from a whitelisted
- *      set of providers.
+ * @dev Provides aggregated values onchain using data from an authorized
+ *      providers addresses.
  */
-contract MarketOracle is Ownable, IOracle {
+contract MedianOracle is Ownable, IOracle {
     using SafeMath for uint256;
-    using Select for uint256[];
 
     struct Report {
         uint256 timestamp;
         uint256 payload;
     }
 
+    // Addresses of providers authorized to push reports.
     address[] public providers;
+
+    // Reports indexed by provider address. Report.timestamp > 0 indicates entry
+    // existence.
     mapping (address => Report) public providerReports;
 
-    event LogSourceAdded(address source);
-    event LogSourceRemoved(address source);
-    event LogSourceExpired(address source);
+    event ProviderAdded(address source);
+    event ProviderRemoved(address source);
+    event ExpiredReport(address source);
 
-
-    // The number of seconds after which the report must be deemed expired.
+    // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec = 6 hours;
 
     uint256 public minimumProviders = 1;
@@ -43,7 +45,6 @@ contract MarketOracle is Ownable, IOracle {
     external
     onlyOwner
     {
-        require(reportExpirationTimeSec_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
     }
 
@@ -77,7 +78,7 @@ contract MarketOracle is Ownable, IOracle {
             if (minValidTimestamp <= providerReports[providerAddress].timestamp) {
                 validReports[size++] = providerReports[providerAddress].payload;
             } else {
-                emit LogSourceExpired(providerAddress);
+                emit ExpiredReport(providerAddress);
             }
         }
 
@@ -85,48 +86,48 @@ contract MarketOracle is Ownable, IOracle {
             return (0, false);
         }
 
-        return (validReports.computeMedian(size), true);
+        return (Select.computeMedian(validReports, size), true);
     }
 
     /**
-     * @dev Adds a provider to the whitelist.
+     * @dev Authorizes a provider.
      * @param provider Address of the provider.
      */
-    function addSource(address provider)
+    function addProvider(address provider)
         external
         onlyOwner
     {
         require(providerReports[provider].timestamp == 0);
         providers.push(provider);
         providerReports[provider].timestamp = 1;
-        emit LogSourceAdded(provider);
+        emit ProviderAdded(provider);
     }
 
     /**
-     * @dev Removes a provider from the whitelist.
+     * @dev Revokes provider authentication.
      * @param provider Address of the provider.
      */
-    function removeSource(address provider)
+    function removeProvider(address provider)
         public
         onlyOwner
     {
         delete providerReports[provider];
         for (uint256 i = 0; i < providers.length; i++) {
             if (providers[i] == provider) {
-                if (i != providers.length-1) {
+                if (i + 1  != providers.length) {
                     providers[i] = providers[providers.length-1];
                 }
                 providers.length--;
-                emit LogSourceRemoved(provider);
+                emit ProviderRemoved(provider);
                 break;
             }
         }
     }
 
     /**
-     * @return The number of market sources in the whitelist.
+     * @return The number of providers.
      */
-    function whitelistSize()
+    function providersSize()
         public
         view
         returns (uint256)
