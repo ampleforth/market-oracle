@@ -1,24 +1,13 @@
 // TODO(naguib): Fail tests if gas utilization changes
 const MedianOracle = artifacts.require('MedianOracle');
 
-const _require = require('app-root-path').require;
-const BlockchainCaller = _require('/util/blockchain_caller');
-const chain = new BlockchainCaller(web3);
-
-const BigNumber = web3.BigNumber;
-
 require('chai')
   .use(require('chai-bignumber')(web3.BigNumber))
   .should();
 
-let oracle, source, source2, deployer, r;
-let accounts;
-function nowSeconds () {
-  return parseInt(Date.now() / 1000);
-}
+let oracle;
 
 async function setupContractsAndAccounts (accounts) {
-  deployer = accounts[0];
   oracle = await MedianOracle.new();
   oracle.setReportExpirationTimeSec(3600);
 }
@@ -28,23 +17,23 @@ contract('MedianOracle:GasTests', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
     const count = 9;
-    list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
+    const list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
 
     for (let i = 0; i < count; i++) {
-      r = await oracle.addProvider(accounts[i + 1], { from: accounts[0] });
-      r = await oracle.pushReport(list[i], { from: accounts[i + 1] });
+      await oracle.addProvider(accounts[i + 1], { from: accounts[0] });
+      const r = await oracle.pushReport(list[i], { from: accounts[i + 1] });
       console.log('Initial pushReport() gas:', r.receipt.gasUsed);
     }
 
     for (let i = 0; i < count; i++) {
-      r = await oracle.pushReport(list[i] + 1, { from: accounts[i + 1] });
+      const r = await oracle.pushReport(list[i] + 1, { from: accounts[i + 1] });
       console.log('Update pushReport() gas:', r.receipt.gasUsed);
     }
   });
 
   describe('when the sources are live', function () {
     it('should calculate the combined market rate and volume', async function () {
-      r = await oracle.getData();
+      const r = await oracle.getData();
       console.log('getData() gas:', r.receipt.gasUsed);
     });
   });

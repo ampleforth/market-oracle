@@ -28,27 +28,27 @@ contract('Select', () => {
       (await returnVal(select.computeMedian([a], 1))).should.be.bignumber.eq(a);
     });
     it('median of 2', async function () {
-      list = [new BigNumber(10000), new BigNumber(30000)];
+      const list = [new BigNumber(10000), new BigNumber(30000)];
       (await returnVal(select.computeMedian(list, 2))).should.be.bignumber.eq(20000);
     });
     it('median of 3', async function () {
-      list = [new BigNumber(10000), new BigNumber(30000), new BigNumber(21000)];
+      const list = [new BigNumber(10000), new BigNumber(30000), new BigNumber(21000)];
       (await returnVal(select.computeMedian(list, 3))).should.be.bignumber.eq(21000);
     });
-    it('median of odd lengthed list', async function () {
+    it('median of odd sized list', async function () {
       const count = 15;
-      list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
-      result = await returnVal(select.computeMedian(list, count));
+      const list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
+      const result = await returnVal(select.computeMedian(list, count));
       list.sort((a, b) => b - a);
-      median = new BigNumber(list[Math.floor(count / 2)].toString());
+      const median = new BigNumber(list[Math.floor(count / 2)].toString());
       result.should.be.bignumber.eq(median);
     });
-    it('median of even lengthed list', async function () {
+    it('median of even sized list', async function () {
       const count = 20;
-      list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
-      result = await returnVal(select.computeMedian(list, count));
+      const list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
+      const result = await returnVal(select.computeMedian(list, count));
       list.sort((a, b) => b - a);
-      median = new BigNumber(list[Math.floor(count / 2)].toString());
+      let median = new BigNumber(list[Math.floor(count / 2)].toString());
       median = median.add(new BigNumber(list[Math.floor(count / 2) - 1].toString()));
       median = median.div(2);
       result.should.be.bignumber.eq(median);

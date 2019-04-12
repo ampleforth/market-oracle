@@ -9,7 +9,7 @@ require('chai')
   .use(require('chai-bignumber')(web3.BigNumber))
   .should();
 
-let oracle, source, source2, deployer, A, B, C, D, r;
+let oracle, deployer, A, B, C, D, r;
 
 async function setupContractsAndAccounts (accounts) {
   deployer = accounts[0];
