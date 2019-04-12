@@ -104,7 +104,7 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     /**
-     * @dev Revokes provider authortization.
+     * @dev Revokes provider authorization.
      * @param provider Address of the provider.
      */
     function removeProvider(address provider)
