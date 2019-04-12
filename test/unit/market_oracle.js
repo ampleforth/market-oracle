@@ -1,5 +1,5 @@
 // TODO(naguib): Add gas usage checks
-const MedianOracle = artifacts.require('MedianOracle.sol');
+const MedianOracle = artifacts.require('MedianOracle');
 
 const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
@@ -114,7 +114,7 @@ contract('MedianOracle:removeProvider', async function (accounts) {
       ).to.be.true;
       await oracle.pushReport(1000000000000000000, { from: D });
     });
-  })
+  });
 });
 
 contract('MedianOracle:removeProvider', async function (accounts) {
@@ -174,13 +174,13 @@ contract('MedianOracle:removeProvider:accessControl', async function (accounts) 
 
   it('should be callable by owner', async function () {
     expect(
-        await chain.isEthException(oracle.removeProvider(A, { from: deployer }))
+      await chain.isEthException(oracle.removeProvider(A, { from: deployer }))
     ).to.be.false;
   });
 
   it('should NOT be callable by non-owner', async function () {
     expect(
-        await chain.isEthException(oracle.removeProvider(A, { from: A }))
+      await chain.isEthException(oracle.removeProvider(A, { from: A }))
     ).to.be.true;
   });
 });
