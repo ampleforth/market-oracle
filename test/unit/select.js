@@ -23,11 +23,6 @@ contract('Select', () => {
   }
 
   describe('Select:computeMedian', function () {
-    it('not enough elements in array', async function () {
-      expect(
-        await chain.isEthException(select.computeMedian([1], 2))
-      ).to.be.true;
-    });
     it('median of 1', async function () {
       const a = new BigNumber(5678);
       (await returnVal(select.computeMedian([a], 1))).should.be.bignumber.eq(a);
@@ -57,6 +52,15 @@ contract('Select', () => {
       median = median.add(new BigNumber(list[Math.floor(count / 2) - 1].toString()));
       median = median.div(2);
       result.should.be.bignumber.eq(median);
+    });
+    it('not enough elements in array', async function () {
+      expect(await chain.isEthException(select.computeMedian([1], 2))).to.be.true;
+    });
+    it('median of empty list', async function () {
+      expect(await chain.isEthException(select.computeMedian([], 1))).to.be.true;
+    });
+    it('median of list of size 0', async function () {
+      expect(await chain.isEthException(select.computeMedian([10000], 0))).to.be.true;
     });
   });
 });

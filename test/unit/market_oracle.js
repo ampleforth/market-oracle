@@ -46,7 +46,7 @@ contract('MedianOracle:addProvider', async function (accounts) {
       const logs = r.logs;
       const event = logs[0];
       expect(event.event).to.eq('ProviderAdded');
-      expect(event.args.source).to.eq(A);
+      expect(event.args.provider).to.eq(A);
     });
     it('should add source to the whitelist', async function () {
       (await oracle.providersSize.call()).should.be.bignumber.eq(1);
@@ -105,7 +105,7 @@ contract('MedianOracle:removeProvider', async function (accounts) {
       const logs = r.logs;
       const event = logs[0];
       expect(event.event).to.eq('ProviderRemoved');
-      expect(event.args.source).to.eq(B);
+      expect(event.args.provider).to.eq(B);
     });
     it('should remove source from the whitelist', async function () {
       (await oracle.providersSize.call()).should.be.bignumber.eq(3);
@@ -199,7 +199,7 @@ contract('MedianOracle:getData', async function (accounts) {
     await oracle.pushReport(2041000000000000000, { from: C });
   });
 
-  describe('when the sources are live', function () {
+  describe('when the reports are valid', function () {
     it('should calculate the combined market rate and volume', async function () {
       const resp = await oracle.getData.call();
       expect(resp[1]).to.be.true;
@@ -209,7 +209,7 @@ contract('MedianOracle:getData', async function (accounts) {
 });
 
 contract('MedianOracle:getData', async function (accounts) {
-  describe('when one of sources has expired', function () {
+  describe('when one of reports has expired', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
       await oracle.addProvider(A);
@@ -224,12 +224,12 @@ contract('MedianOracle:getData', async function (accounts) {
       await oracle.pushReport(1053200000000000000, { from: A });
     });
 
-    it('should emit SourceExpired message', async function () {
+    it('should emit ReportExpired message', async function () {
       const resp = await oracle.getData();
       const logs = resp.logs;
       const event = logs[0];
-      expect(event.event).to.eq('ExpiredReport');
-      expect(event.args.source).to.eq(C);
+      expect(event.event).to.eq('ReportExpired');
+      expect(event.args.provider).to.eq(C);
     });
     it('should calculate the exchange rate', async function () {
       const resp = await oracle.getData.call();
@@ -240,7 +240,7 @@ contract('MedianOracle:getData', async function (accounts) {
 });
 
 contract('MedianOracle:getData', async function (accounts) {
-  describe('when all sources have expired', function () {
+  describe('when all reports have expired', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
       await oracle.addProvider(A);
@@ -250,16 +250,16 @@ contract('MedianOracle:getData', async function (accounts) {
       await chain.waitForSomeTime(3601);
     });
 
-    it('should emit 2 SourceExpired messages', async function () {
+    it('should emit 2 ReportExpired messages', async function () {
       const resp = await oracle.getData();
       const logs = resp.logs;
       let event = logs[0];
-      expect(event.event).to.eq('ExpiredReport');
-      expect(event.args.source).to.eq(A);
+      expect(event.event).to.eq('ReportExpired');
+      expect(event.args.provider).to.eq(A);
 
       event = logs[1];
-      expect(event.event).to.eq('ExpiredReport');
-      expect(event.args.source).to.eq(B);
+      expect(event.event).to.eq('ReportExpired');
+      expect(event.args.provider).to.eq(B);
     });
     it('should return false and 0', async function () {
       const resp = await oracle.getData.call();

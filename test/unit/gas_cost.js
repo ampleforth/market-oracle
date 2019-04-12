@@ -27,7 +27,7 @@ async function setupContractsAndAccounts (accounts) {
 contract('MedianOracle:GasTests', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
-    const count = 10;
+    const count = 9;
     list = Array.from({length: count}, () => Math.floor(Math.random() * 10 ** 18));
 
     for (let i = 0; i < count; i++) {

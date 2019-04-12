@@ -14,8 +14,8 @@ interface IOracle {
 /**
  * @title Median Oracle
  *
- * @dev Provides aggregated values onchain using data from an authorized
- *      providers addresses.
+ * @dev Provides a value onchain that's aggregated from a whitelisted set of
+        providers.
  */
 contract MedianOracle is Ownable, IOracle {
     using SafeMath for uint256;
@@ -32,9 +32,9 @@ contract MedianOracle is Ownable, IOracle {
     // existence.
     mapping (address => Report) public providerReports;
 
-    event ProviderAdded(address source);
-    event ProviderRemoved(address source);
-    event ExpiredReport(address source);
+    event ProviderAdded(address provider);
+    event ProviderRemoved(address provider);
+    event ReportExpired(address provider);
 
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec = 6 hours;
@@ -78,7 +78,7 @@ contract MedianOracle is Ownable, IOracle {
             if (minValidTimestamp <= providerReports[providerAddress].timestamp) {
                 validReports[size++] = providerReports[providerAddress].payload;
             } else {
-                emit ExpiredReport(providerAddress);
+                emit ReportExpired(providerAddress);
             }
         }
 
@@ -104,7 +104,7 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     /**
-     * @dev Revokes provider authentication.
+     * @dev Revokes provider authortization.
      * @param provider Address of the provider.
      */
     function removeProvider(address provider)
