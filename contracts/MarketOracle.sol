@@ -3,7 +3,7 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "./MarketSource.sol";
+import "./lib/Select.sol";
 
 
 interface IOracle {
@@ -12,145 +12,126 @@ interface IOracle {
 
 
 /**
- * @title Market Oracle
+ * @title Median Oracle
  *
- * @dev Provides the aggregated exchange rate data onchain using data from a whitelisted
- *      set of market source contracts.
- *      Exchange rate is the TOKEN:TARGET rate.
+ * @dev Provides a value onchain that's aggregated from a whitelisted set of
+        providers.
  */
-contract MarketOracle is Ownable, IOracle {
+contract MedianOracle is Ownable, IOracle {
     using SafeMath for uint256;
 
-    // Whitelist of sources
-    MarketSource[] public whitelist;
+    struct Report {
+        uint256 timestamp;
+        uint256 payload;
+    }
 
-    event LogSourceAdded(MarketSource source);
-    event LogSourceRemoved(MarketSource source);
-    event LogSourceExpired(MarketSource source);
+    // Addresses of providers authorized to push reports.
+    address[] public providers;
 
-    /**
-     * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Expired market sources are ignored. If there has been no trade volume in the last
-     *      24hrs, then there is effectively no exchange rate and that value should be ignored by
-     *      the client.
-     * @return exchangeRate: Volume weighted average of exchange rates.
-    *          isValid: True if data is fresh and false if not.
-     */
+    // Reports indexed by provider address. Report.timestamp > 0 indicates entry
+    // existence.
+    mapping (address => Report) public providerReports;
+
+    event ProviderAdded(address provider);
+    event ProviderRemoved(address provider);
+    event ReportExpired(address provider);
+
+    // The number of seconds after which the report is deemed expired.
+    uint256 public reportExpirationTimeSec = 6 hours;
+
+    uint256 public minimumProviders = 1;
+
+    function setReportExpirationTimeSec(uint256 reportExpirationTimeSec_)
+    external
+    onlyOwner
+    {
+        reportExpirationTimeSec = reportExpirationTimeSec_;
+    }
+
+    function setMinimumProviders(uint256 minimumProviders_)
+    external
+    onlyOwner
+    {
+        require(minimumProviders_ > 0);
+        minimumProviders = minimumProviders_;
+    }
+
+    function pushReport(uint256 payload) external
+    {
+        address sender = msg.sender;
+        require(providerReports[sender].timestamp > 0);
+        providerReports[sender].timestamp = now;
+        providerReports[sender].payload = payload;
+    }
+
     function getData()
         external
         returns (uint256, bool)
     {
-        uint256 volumeWeightedSum = 0;
-        uint256 volumeSum = 0;
-        uint256 partialRate = 0;
-        uint256 partialVolume = 0;
-        bool isSourceFresh = false;
+        uint256 reportsCount = providers.length;
+        uint256[] memory validReports = new uint256[](reportsCount);
+        uint256 size = 0;
+        uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
 
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
-
-            if (!isSourceFresh) {
-                emit LogSourceExpired(whitelist[i]);
-                continue;
+        for (uint256 i = 0; i < reportsCount; i++) {
+            address providerAddress = providers[i];
+            if (minValidTimestamp <= providerReports[providerAddress].timestamp) {
+                validReports[size++] = providerReports[providerAddress].payload;
+            } else {
+                emit ReportExpired(providerAddress);
             }
-
-            volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
-            volumeSum = volumeSum.add(partialVolume);
         }
 
-        if (volumeSum > 0) {
-            // No explicit fixed point normalization is done as dividing by volumeSum normalizes
-            // to exchangeRate's format.
-            return (volumeWeightedSum.div(volumeSum), true);
-        } else {
+        if (size < minimumProviders) {
             return (0, false);
         }
+
+        return (Select.computeMedian(validReports, size), true);
     }
 
     /**
-     * @dev Adds a market source to the whitelist.
-     * Upgradeable contracts should never be added,
-     * because the logic could be changed after the whitelisting process.
-     * @param source Address of the MarketSource.
+     * @dev Authorizes a provider.
+     * @param provider Address of the provider.
      */
-    function addSource(MarketSource source)
+    function addProvider(address provider)
         external
         onlyOwner
     {
-        whitelist.push(source);
-        emit LogSourceAdded(source);
+        require(providerReports[provider].timestamp == 0);
+        providers.push(provider);
+        providerReports[provider].timestamp = 1;
+        emit ProviderAdded(provider);
     }
 
     /**
-     * @dev Removes the provided market source from the whitelist.
-     * @param source Address of the MarketSource.
+     * @dev Revokes provider authorization.
+     * @param provider Address of the provider.
      */
-    function removeSource(MarketSource source)
-        external
+    function removeProvider(address provider)
+        public
         onlyOwner
     {
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            if (whitelist[i] == source) {
-                removeSourceAtIndex(i);
+        delete providerReports[provider];
+        for (uint256 i = 0; i < providers.length; i++) {
+            if (providers[i] == provider) {
+                if (i + 1  != providers.length) {
+                    providers[i] = providers[providers.length-1];
+                }
+                providers.length--;
+                emit ProviderRemoved(provider);
                 break;
             }
         }
     }
 
     /**
-     * @dev Expunges from the whitelist any MarketSource whose associated contracts have been
-     *      destructed.
+     * @return The number of providers.
      */
-    function removeDestructedSources()
-        external
-    {
-        uint256 i = 0;
-        while (i < whitelist.length) {
-            if (isContractDestructed(whitelist[i])) {
-                removeSourceAtIndex(i);
-            } else {
-                i++;
-            }
-        }
-    }
-
-    /**
-     * @return The number of market sources in the whitelist.
-     */
-    function whitelistSize()
+    function providersSize()
         public
         view
         returns (uint256)
     {
-        return whitelist.length;
-    }
-
-    /**
-     * @dev Checks if a contract has been destructed.
-     * @param contractAddress Address of the contract.
-     */
-    function isContractDestructed(address contractAddress)
-        private
-        view
-        returns (bool)
-    {
-        uint256 size;
-        assembly { size := extcodesize(contractAddress) }
-        return size == 0;
-    }
-
-   /**
-    * Whitelist must be non-empty before calling.
-    * @param index Index of the MarketSource to be removed from the whitelist.
-    */
-    function removeSourceAtIndex(uint256 index)
-        private
-    {
-        // assert(whitelist.length > index);
-        emit LogSourceRemoved(whitelist[index]);
-        if (index != whitelist.length-1) {
-            whitelist[index] = whitelist[whitelist.length-1];
-        }
-        whitelist.length--;
+        return providers.length;
     }
 }

@@ -1,5 +1,5 @@
 {
-  "extends": "default",
+  "extends": "solhint:default",
   "rules": {
     "not-rely-on-time": [false],
     "indent": ["warn", 4]
