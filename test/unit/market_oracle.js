@@ -243,6 +243,74 @@ contract('MedianOracle:getData', async function (accounts) {
 });
 
 contract('MedianOracle:getData', async function (accounts) {
+  describe('when one of the reports is too recent expired', function () {
+    before(async function () {
+      await setupContractsAndAccounts(accounts);
+      await oracle.addProvider(A);
+      await oracle.addProvider(B);
+      await oracle.addProvider(C);
+      await oracle.addProvider(D);
+
+
+      await oracle.pushReport(2041000000000000000, { from: C });
+      await oracle.pushReport(1000000000000000000, { from: D });
+      await oracle.pushReport(1053200000000000000, { from: A });
+      await chain.waitForSomeTime(10);
+      await oracle.pushReport(1041000000000000000, { from: B });
+
+    });
+
+    it('should emit ReportTooRecent message', async function () {
+      const resp = await oracle.getData();
+      const logs = resp.logs;
+      const event = logs[0];
+      expect(event.event).to.eq('ReportTooRecent');
+      expect(event.args.provider).to.eq(B);
+    });
+    it('should calculate the exchange rate', async function () {
+      const resp = await oracle.getData.call();
+      expect(resp[1]).to.be.true;
+      resp[0].should.be.bignumber.eq(1053200000000000000);
+    });
+  });
+});
+
+
+contract('MedianOracle:getData', async function (accounts) {
+  describe('when not enough providers are valid', function () {
+    before(async function () {
+      await setupContractsAndAccounts(accounts);
+      await oracle.addProvider(A);
+      await oracle.addProvider(B);
+      await oracle.addProvider(C);
+      await oracle.addProvider(D);
+      oracle.setMinimumProviders(4);
+
+
+      await oracle.pushReport(2041000000000000000, { from: C });
+      await oracle.pushReport(1000000000000000000, { from: D });
+      await oracle.pushReport(1053200000000000000, { from: A });
+      await chain.waitForSomeTime(10);
+      await oracle.pushReport(1041000000000000000, { from: B });
+
+    });
+
+    it('should emit ReportTooRecent message', async function () {
+      const resp = await oracle.getData();
+      const logs = resp.logs;
+      const event = logs[0];
+      expect(event.event).to.eq('ReportTooRecent');
+      expect(event.args.provider).to.eq(B);
+    });
+    it('should calculate the exchange rate', async function () {
+      const resp = await oracle.getData.call();
+      expect(resp[1]).to.be.false;
+      resp[0].should.be.bignumber.eq(0);
+    });
+  });
+});
+
+contract('MedianOracle:getData', async function (accounts) {
   describe('when all reports have expired', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);

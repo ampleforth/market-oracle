@@ -32,9 +32,6 @@ contract MedianOracle is Ownable, IOracle {
     // existence.
     mapping (address => Report) public providerReports;
 
-
-
-
     event ProviderAdded(address provider);
     event ProviderRemoved(address provider);
     event ReportExpired(address provider);
