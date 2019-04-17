@@ -18,7 +18,8 @@ async function setupContractsAndAccounts (accounts) {
   C = accounts[3];
   D = accounts[4];
   oracle = await MedianOracle.new();
-  oracle.setReportExpirationTimeSec(3600);
+  oracle.setReportExpirationTimeSec(60);
+  oracle.setReportSafetyDelaySec(10);
 }
 
 contract('MedianOracle:providersSize', async function (accounts) {
@@ -197,6 +198,7 @@ contract('MedianOracle:getData', async function (accounts) {
     await oracle.pushReport(1041000000000000000, { from: B });
     await oracle.pushReport(1053200000000000000, { from: A });
     await oracle.pushReport(2041000000000000000, { from: C });
+    await chain.waitForSomeTime(10);
   });
 
   describe('when the reports are valid', function () {
@@ -218,10 +220,11 @@ contract('MedianOracle:getData', async function (accounts) {
       await oracle.addProvider(D);
 
       await oracle.pushReport(2041000000000000000, { from: C });
-      await chain.waitForSomeTime(3601);
+      await chain.waitForSomeTime(61);
       await oracle.pushReport(1041000000000000000, { from: B });
       await oracle.pushReport(1000000000000000000, { from: D });
       await oracle.pushReport(1053200000000000000, { from: A });
+      await chain.waitForSomeTime(10);
     });
 
     it('should emit ReportExpired message', async function () {
@@ -247,7 +250,7 @@ contract('MedianOracle:getData', async function (accounts) {
       await oracle.addProvider(B);
       await oracle.pushReport(1053200000000000000, { from: A });
       await oracle.pushReport(1041000000000000000, { from: B });
-      await chain.waitForSomeTime(3601);
+      await chain.waitForSomeTime(61);
     });
 
     it('should emit 2 ReportExpired messages', async function () {
@@ -268,3 +271,4 @@ contract('MedianOracle:getData', async function (accounts) {
     });
   });
 });
+

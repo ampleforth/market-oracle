@@ -35,9 +35,12 @@ contract MedianOracle is Ownable, IOracle {
     event ProviderAdded(address provider);
     event ProviderRemoved(address provider);
     event ReportExpired(address provider);
+    event ReportTooRecent(address provider);
 
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec = 6 hours;
+
+    uint256 public reportSafetyDelaySec = 1 hours;
 
     uint256 public minimumProviders = 1;
 
@@ -46,6 +49,13 @@ contract MedianOracle is Ownable, IOracle {
     onlyOwner
     {
         reportExpirationTimeSec = reportExpirationTimeSec_;
+    }
+
+    function setReportSafetyDelaySec(uint256 reportSafetyDelaySec_)
+    external
+    onlyOwner
+    {
+        reportSafetyDelaySec = reportSafetyDelaySec_;
     }
 
     function setMinimumProviders(uint256 minimumProviders_)
@@ -72,13 +82,17 @@ contract MedianOracle is Ownable, IOracle {
         uint256[] memory validReports = new uint256[](reportsCount);
         uint256 size = 0;
         uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
+        uint256 maxValidTimestamp =  now.sub(reportSafetyDelaySec);
 
         for (uint256 i = 0; i < reportsCount; i++) {
             address providerAddress = providers[i];
-            if (minValidTimestamp <= providerReports[providerAddress].timestamp) {
-                validReports[size++] = providerReports[providerAddress].payload;
-            } else {
+            uint256 reportTimestamp = providerReports[providerAddress].timestamp;
+            if (minValidTimestamp > reportTimestamp) {
                 emit ReportExpired(providerAddress);
+            } else if (maxValidTimestamp < reportTimestamp) {
+                emit ReportTooRecent(providerAddress);
+            } else {
+                validReports[size++] = providerReports[providerAddress].payload;
             }
         }
 
