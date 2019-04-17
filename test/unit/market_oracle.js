@@ -19,7 +19,7 @@ async function setupContractsAndAccounts (accounts) {
   D = accounts[4];
   oracle = await MedianOracle.new();
   oracle.setReportExpirationTimeSec(60);
-  oracle.setReportSafetyDelaySec(10);
+  oracle.setReportSecurityDelaySec(10);
 }
 
 contract('MedianOracle:providersSize', async function (accounts) {

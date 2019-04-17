@@ -32,6 +32,9 @@ contract MedianOracle is Ownable, IOracle {
     // existence.
     mapping (address => Report) public providerReports;
 
+
+
+
     event ProviderAdded(address provider);
     event ProviderRemoved(address provider);
     event ReportExpired(address provider);
@@ -40,7 +43,7 @@ contract MedianOracle is Ownable, IOracle {
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec = 6 hours;
 
-    uint256 public reportSafetyDelaySec = 1 hours;
+    uint256 public reportSecurityDelaySec = 1 hours;
 
     uint256 public minimumProviders = 1;
 
@@ -51,11 +54,11 @@ contract MedianOracle is Ownable, IOracle {
         reportExpirationTimeSec = reportExpirationTimeSec_;
     }
 
-    function setReportSafetyDelaySec(uint256 reportSafetyDelaySec_)
+    function setReportSecurityDelaySec(uint256 reportSecurityDelaySec_)
     external
     onlyOwner
     {
-        reportSafetyDelaySec = reportSafetyDelaySec_;
+        reportSecurityDelaySec = reportSecurityDelaySec_;
     }
 
     function setMinimumProviders(uint256 minimumProviders_)
@@ -82,14 +85,14 @@ contract MedianOracle is Ownable, IOracle {
         uint256[] memory validReports = new uint256[](reportsCount);
         uint256 size = 0;
         uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
-        uint256 maxValidTimestamp =  now.sub(reportSafetyDelaySec);
+        uint256 maxValidTimestamp =  now.sub(reportSecurityDelaySec);
 
         for (uint256 i = 0; i < reportsCount; i++) {
             address providerAddress = providers[i];
             uint256 reportTimestamp = providerReports[providerAddress].timestamp;
-            if (minValidTimestamp > reportTimestamp) {
+            if (reportTimestamp < minValidTimestamp) {
                 emit ReportExpired(providerAddress);
-            } else if (maxValidTimestamp < reportTimestamp) {
+            } else if (reportTimestamp > maxValidTimestamp) {
                 emit ReportTooRecent(providerAddress);
             } else {
                 validReports[size++] = providerReports[providerAddress].payload;
