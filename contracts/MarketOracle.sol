@@ -30,12 +30,11 @@ contract MedianOracle is Ownable, IOracle {
 
     // Reports indexed by provider address. Report.timestamp > 0 indicates entry
     // existence.
-    mapping (address => Report) public providerReports;
+    mapping (address => Report[2]) public providerReports;
 
     event ProviderAdded(address provider);
     event ProviderRemoved(address provider);
-    event ReportExpired(address provider);
-    event ReportTooRecent(address provider);
+    event ReportTimestampOutOfRange(address provider);
 
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec = 6 hours;
@@ -68,10 +67,32 @@ contract MedianOracle is Ownable, IOracle {
 
     function pushReport(uint256 payload) external
     {
-        address sender = msg.sender;
-        require(providerReports[sender].timestamp > 0);
-        providerReports[sender].timestamp = now;
-        providerReports[sender].payload = payload;
+        address providerAddress = msg.sender;
+        Report[2] memory reports = providerReports[providerAddress];
+
+        require(reports[0].timestamp > 0);
+
+        uint8 index_recent;
+        if (reports[0].timestamp >= reports[1].timestamp) {
+            index_recent = 0;
+        } else {
+            index_recent = 1;
+        }
+        uint8 index_older = 1 - index_recent;
+        uint256 nowTimestamp = now;
+
+        require(reports[index_recent].timestamp.add(reportSecurityDelaySec) <= nowTimestamp);
+
+        providerReports[providerAddress][index_older].timestamp = nowTimestamp;
+        providerReports[providerAddress][index_older].payload = payload;
+    }
+
+    function purgeReports() external
+    {
+        address providerAddress = msg.sender;
+        require (providerReports[providerAddress][0].timestamp > 0);
+        providerReports[providerAddress][0].timestamp=1;
+        providerReports[providerAddress][1].timestamp=1;
     }
 
     function getData()
@@ -86,13 +107,32 @@ contract MedianOracle is Ownable, IOracle {
 
         for (uint256 i = 0; i < reportsCount; i++) {
             address providerAddress = providers[i];
-            uint256 reportTimestamp = providerReports[providerAddress].timestamp;
-            if (reportTimestamp < minValidTimestamp) {
-                emit ReportExpired(providerAddress);
-            } else if (reportTimestamp > maxValidTimestamp) {
-                emit ReportTooRecent(providerAddress);
+            Report[2] memory reports = providerReports[providerAddress];
+            uint8 index_recent;
+            if (reports[0].timestamp >= reports[1].timestamp) {
+                index_recent = 0;
             } else {
-                validReports[size++] = providerReports[providerAddress].payload;
+                index_recent = 1;
+            }
+            uint8 index_older = 1 - index_recent;
+
+
+            if (reports[index_recent].timestamp <= maxValidTimestamp) { // Not too recent
+                if(reports[index_recent].timestamp < minValidTimestamp) { // Too old
+                    emit ReportTimestampOutOfRange(providerAddress);
+                } else {
+                    // Valid
+                    validReports[size++] = providerReports[providerAddress][index_recent].payload;
+                }
+            } else { // Newer is too recent
+                uint256 reportTimestampRecent = providerReports[providerAddress][index_older].timestamp;
+                if (reportTimestampRecent < minValidTimestamp) {
+                    emit ReportTimestampOutOfRange(providerAddress);
+                } else if (reportTimestampRecent > maxValidTimestamp) {
+                    emit ReportTimestampOutOfRange(providerAddress);
+                } else {
+                    validReports[size++] = providerReports[providerAddress][index_older].payload;
+                }
             }
         }
 
@@ -111,9 +151,10 @@ contract MedianOracle is Ownable, IOracle {
         external
         onlyOwner
     {
-        require(providerReports[provider].timestamp == 0);
+        require(providerReports[provider][0].timestamp == 0 && providerReports[provider][1].timestamp == 0);
         providers.push(provider);
-        providerReports[provider].timestamp = 1;
+        providerReports[provider][0].timestamp = 1;
+        providerReports[provider][1].timestamp = 1;
         emit ProviderAdded(provider);
     }
 

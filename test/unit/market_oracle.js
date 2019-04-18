@@ -227,11 +227,11 @@ contract('MedianOracle:getData', async function (accounts) {
       await chain.waitForSomeTime(10);
     });
 
-    it('should emit ReportExpired message', async function () {
+    it('should emit ReportTimestampOutOfRange message', async function () {
       const resp = await oracle.getData();
       const logs = resp.logs;
       const event = logs[0];
-      expect(event.event).to.eq('ReportExpired');
+      expect(event.event).to.eq('ReportTimestampOutOfRange');
       expect(event.args.provider).to.eq(C);
     });
     it('should calculate the exchange rate', async function () {
@@ -243,7 +243,7 @@ contract('MedianOracle:getData', async function (accounts) {
 });
 
 contract('MedianOracle:getData', async function (accounts) {
-  describe('when one of the reports is too recent expired', function () {
+  describe('when one of the reports is too recent', function () {
     before(async function () {
       await setupContractsAndAccounts(accounts);
       await oracle.addProvider(A);
@@ -260,11 +260,11 @@ contract('MedianOracle:getData', async function (accounts) {
 
     });
 
-    it('should emit ReportTooRecent message', async function () {
+    it('should emit ReportTimestampOutOfRange message', async function () {
       const resp = await oracle.getData();
       const logs = resp.logs;
       const event = logs[0];
-      expect(event.event).to.eq('ReportTooRecent');
+      expect(event.event).to.eq('ReportTimestampOutOfRange');
       expect(event.args.provider).to.eq(B);
     });
     it('should calculate the exchange rate', async function () {
@@ -295,11 +295,11 @@ contract('MedianOracle:getData', async function (accounts) {
 
     });
 
-    it('should emit ReportTooRecent message', async function () {
+    it('should emit ReportTimestampOutOfRange message', async function () {
       const resp = await oracle.getData();
       const logs = resp.logs;
       const event = logs[0];
-      expect(event.event).to.eq('ReportTooRecent');
+      expect(event.event).to.eq('ReportTimestampOutOfRange');
       expect(event.args.provider).to.eq(B);
     });
     it('should calculate the exchange rate', async function () {
@@ -321,15 +321,15 @@ contract('MedianOracle:getData', async function (accounts) {
       await chain.waitForSomeTime(61);
     });
 
-    it('should emit 2 ReportExpired messages', async function () {
+    it('should emit 2 ReportTimestampOutOfRange messages', async function () {
       const resp = await oracle.getData();
       const logs = resp.logs;
       let event = logs[0];
-      expect(event.event).to.eq('ReportExpired');
+      expect(event.event).to.eq('ReportTimestampOutOfRange');
       expect(event.args.provider).to.eq(A);
 
       event = logs[1];
-      expect(event.event).to.eq('ReportExpired');
+      expect(event.event).to.eq('ReportTimestampOutOfRange');
       expect(event.args.provider).to.eq(B);
     });
     it('should return false and 0', async function () {

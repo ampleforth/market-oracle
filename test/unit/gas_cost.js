@@ -1,6 +1,10 @@
 // TODO(naguib): Fail tests if gas utilization changes
 const MedianOracle = artifacts.require('MedianOracle');
 
+const _require = require('app-root-path').require;
+const BlockchainCaller = _require('/util/blockchain_caller');
+const chain = new BlockchainCaller(web3);
+
 require('chai')
   .use(require('chai-bignumber')(web3.BigNumber))
   .should();
@@ -9,7 +13,8 @@ let oracle;
 
 async function setupContractsAndAccounts (accounts) {
   oracle = await MedianOracle.new();
-  oracle.setReportExpirationTimeSec(3600);
+  oracle.setReportExpirationTimeSec(60);
+  oracle.setReportSecurityDelaySec(10);
 }
 
 // TODO(naguib): Fail if gas utilization changes.
@@ -24,7 +29,7 @@ contract('MedianOracle:GasTests', async function (accounts) {
       const r = await oracle.pushReport(list[i], { from: accounts[i + 1] });
       console.log('Initial pushReport() gas:', r.receipt.gasUsed);
     }
-
+    await chain.waitForSomeTime(10);
     for (let i = 0; i < count; i++) {
       const r = await oracle.pushReport(list[i] + 1, { from: accounts[i + 1] });
       console.log('Update pushReport() gas:', r.receipt.gasUsed);
