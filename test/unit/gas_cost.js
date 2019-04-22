@@ -12,7 +12,7 @@ require('chai')
 let oracle;
 
 async function setupContractsAndAccounts (accounts) {
-  oracle = await MedianOracle.new(60,10,1);
+  oracle = await MedianOracle.new(60, 10, 1);
 }
 
 // TODO(naguib): Fail if gas utilization changes.

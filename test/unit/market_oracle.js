@@ -17,7 +17,7 @@ async function setupContractsAndAccounts (accounts) {
   B = accounts[2];
   C = accounts[3];
   D = accounts[4];
-  oracle = await MedianOracle.new(60,10,1);
+  oracle = await MedianOracle.new(60, 10, 1);
 }
 
 contract('MedianOracle:providersSize', async function (accounts) {
