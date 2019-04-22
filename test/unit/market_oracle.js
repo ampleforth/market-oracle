@@ -295,7 +295,7 @@ contract('MedianOracle:getData', async function (accounts) {
       expect(event.event).to.eq('ReportTimestampOutOfRange');
       expect(event.args.provider).to.eq(B);
     });
-    it('should calculate the exchange rate', async function () {
+    it('should not have a valid result', async function () {
       const resp = await oracle.getData.call();
       expect(resp[1]).to.be.false;
       resp[0].should.be.bignumber.eq(0);
