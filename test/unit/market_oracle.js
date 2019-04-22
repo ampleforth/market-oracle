@@ -66,6 +66,7 @@ contract('MedianOracle:pushReport', async function (accounts) {
     ).to.be.true;
     oracle.addProvider(A, { from: deployer });
     await oracle.pushReport(1000000000000000000, { from: A });
+    expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
   });
 });
 
@@ -277,7 +278,8 @@ contract('MedianOracle:getData', async function (accounts) {
       await oracle.addProvider(B);
       await oracle.addProvider(C);
       await oracle.addProvider(D);
-      oracle.setMinimumProviders(4);
+      expect(await chain.isEthException(oracle.setMinimumProviders(0))).to.be.true;
+      await oracle.setMinimumProviders(4);
 
       await oracle.pushReport(2041000000000000000, { from: C });
       await oracle.pushReport(1000000000000000000, { from: D });
