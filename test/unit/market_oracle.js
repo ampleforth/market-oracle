@@ -214,9 +214,9 @@ contract('MedianOracle:getData', async function (accounts) {
       await oracle.addProvider(B);
       await oracle.addProvider(C);
       await oracle.addProvider(D);
-
+      oracle.setReportExpirationTimeSec(40);
       await oracle.pushReport(2041000000000000000, { from: C });
-      await chain.waitForSomeTime(61);
+      await chain.waitForSomeTime(41);
       await oracle.pushReport(1041000000000000000, { from: B });
       await oracle.pushReport(1000000000000000000, { from: D });
       await oracle.pushReport(1053200000000000000, { from: A });
