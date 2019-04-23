@@ -20,6 +20,16 @@ async function setupContractsAndAccounts (accounts) {
   oracle = await MedianOracle.new(60, 10, 1);
 }
 
+contract('MedianOracle:constructor', async function (accounts) {
+  before(async function () {
+    await setupContractsAndAccounts(accounts);
+  });
+
+  it('should fail if a parameter is invalid', async function () {
+    expect(await chain.isEthException(MedianOracle.new(60, 10, 0))).to.be.true;
+  });
+});
+
 contract('MedianOracle:providersSize', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
@@ -61,11 +71,10 @@ contract('MedianOracle:pushReport', async function (accounts) {
     await setupContractsAndAccounts(accounts);
   });
   it('should only push from authorized source', async function () {
-    expect(
-      await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))
-    ).to.be.true;
+    expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
     oracle.addProvider(A, { from: deployer });
     await oracle.pushReport(1000000000000000000, { from: A });
+    // should fail if reportDelaySec did not pass since the previous push
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
   });
 });

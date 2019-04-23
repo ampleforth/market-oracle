@@ -39,6 +39,8 @@ contract MedianOracle is Ownable, IOracle {
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec;
 
+    // The number of seconds since reporting that has to pass before a report
+    // is usable.
     uint256 public reportDelaySec;
 
     uint256 public minimumProviders = 1;
@@ -50,6 +52,7 @@ contract MedianOracle is Ownable, IOracle {
     {
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
+        require(minimumProviders_ > 0);
         minimumProviders = minimumProviders_;
     }
 
@@ -189,7 +192,7 @@ contract MedianOracle is Ownable, IOracle {
      * @return The number of providers.
      */
     function providersSize()
-        public
+        external
         view
         returns (uint256)
     {
