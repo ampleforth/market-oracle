@@ -78,6 +78,7 @@ contract MedianOracle is Ownable, IOracle {
         minimumProviders = minimumProviders_;
     }
 
+    // payload is expected to be 18 decimal fixed point number.
     function pushReport(uint256 payload) external
     {
         address providerAddress = msg.sender;
