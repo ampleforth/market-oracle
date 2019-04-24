@@ -50,9 +50,9 @@ contract MedianOracle is Ownable, IOracle {
                 uint256 minimumProviders_)
     public
     {
+        require(minimumProviders_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
-        require(minimumProviders_ > 0);
         minimumProviders = minimumProviders_;
     }
 
