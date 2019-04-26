@@ -39,6 +39,8 @@ contract MedianOracle is Ownable, IOracle {
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec;
 
+    // The number of seconds since reporting that has to pass before a report
+    // is usable.
     uint256 public reportDelaySec;
 
     uint256 public minimumProviders = 1;
@@ -48,6 +50,7 @@ contract MedianOracle is Ownable, IOracle {
                 uint256 minimumProviders_)
     public
     {
+        require(minimumProviders_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
         minimumProviders = minimumProviders_;
@@ -75,6 +78,9 @@ contract MedianOracle is Ownable, IOracle {
         minimumProviders = minimumProviders_;
     }
 
+    /**
+    * @param payload is expected to be 18 decimal fixed point number.
+    */
     function pushReport(uint256 payload) external
     {
         address providerAddress = msg.sender;
@@ -189,7 +195,7 @@ contract MedianOracle is Ownable, IOracle {
      * @return The number of providers.
      */
     function providersSize()
-        public
+        external
         view
         returns (uint256)
     {
