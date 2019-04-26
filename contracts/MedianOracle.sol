@@ -15,7 +15,7 @@ interface IOracle {
  * @title Median Oracle
  *
  * @dev Provides a value onchain that's aggregated from a whitelisted set of
-        providers.
+ *      providers.
  */
 contract MedianOracle is Ownable, IOracle {
     using SafeMath for uint256;
@@ -48,7 +48,7 @@ contract MedianOracle is Ownable, IOracle {
     constructor(uint256 reportExpirationTimeSec_,
                 uint256 reportDelaySec_,
                 uint256 minimumProviders_)
-    public
+        public
     {
         require(minimumProviders_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
@@ -57,30 +57,30 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     function setReportExpirationTimeSec(uint256 reportExpirationTimeSec_)
-    external
-    onlyOwner
+        external
+        onlyOwner
     {
         reportExpirationTimeSec = reportExpirationTimeSec_;
     }
 
     function setReportDelaySec(uint256 reportDelaySec_)
-    external
-    onlyOwner
+        external
+        onlyOwner
     {
         reportDelaySec = reportDelaySec_;
     }
 
     function setMinimumProviders(uint256 minimumProviders_)
-    external
-    onlyOwner
+        external
+        onlyOwner
     {
         require(minimumProviders_ > 0);
         minimumProviders = minimumProviders_;
     }
 
     /**
-    * @param payload is expected to be 18 decimal fixed point number.
-    */
+     * @param payload is expected to be 18 decimal fixed point number.
+     */
     function pushReport(uint256 payload) external
     {
         address providerAddress = msg.sender;
