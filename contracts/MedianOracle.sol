@@ -54,7 +54,7 @@ contract MedianOracle is Ownable, IOracle {
                 uint256 minimumProviders_)
         public
     {
-        require(reportExpirationTimeSec_ < MAX_REPORT_EXPIRATION_TIME);
+        require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
         require(minimumProviders_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
@@ -65,7 +65,7 @@ contract MedianOracle is Ownable, IOracle {
         external
         onlyOwner
     {
-        require(reportExpirationTimeSec_ < MAX_REPORT_EXPIRATION_TIME);
+        require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
         reportExpirationTimeSec = reportExpirationTimeSec_;
     }
 
