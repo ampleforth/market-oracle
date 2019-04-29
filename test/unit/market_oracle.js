@@ -26,7 +26,10 @@ contract('MedianOracle:constructor', async function (accounts) {
   });
 
   it('should fail if a parameter is invalid', async function () {
+    expect(await chain.isEthException(oracle = await MedianOracle.new(60, 10, 1))).to.be.false;
     expect(await chain.isEthException(MedianOracle.new(60, 10, 0))).to.be.true;
+    expect(await chain.isEthException(MedianOracle.new(60 * 60 * 24 * 365 * 11, 10, 1))).to.be.true;
+    expect(await chain.isEthException(oracle.setReportExpirationTimeSec(60 * 60 * 24 * 365 * 11))).to.be.true;
   });
 });
 

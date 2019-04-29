@@ -45,11 +45,16 @@ contract MedianOracle is Ownable, IOracle {
 
     uint256 public minimumProviders = 1;
 
+    // Timestamp of 1 is used to mark uninitialized and invalidated data.
+    // This is needed so that timestamp of 1 is always considered expired.
+    uint256 private constant MAX_REPORT_EXPIRATION_TIME = 10 years;
+
     constructor(uint256 reportExpirationTimeSec_,
                 uint256 reportDelaySec_,
                 uint256 minimumProviders_)
         public
     {
+        require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
         require(minimumProviders_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
@@ -60,6 +65,7 @@ contract MedianOracle is Ownable, IOracle {
         external
         onlyOwner
     {
+        require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
         reportExpirationTimeSec = reportExpirationTimeSec_;
     }
 
