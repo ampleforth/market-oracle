@@ -1,5 +1,3 @@
-// TODO(naguib): Fail tests if gas utilization changes
-// TODO(naguib): Consider Adding more test scenarios
 const SelectMock = artifacts.require('SelectMock');
 
 const BigNumber = web3.BigNumber;

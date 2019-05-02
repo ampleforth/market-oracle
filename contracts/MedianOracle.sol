@@ -122,9 +122,10 @@ contract MedianOracle is Ownable, IOracle {
         providerReports[providerAddress][0].timestamp=1;
         providerReports[providerAddress][1].timestamp=1;
     }
+
     /**
-    * @notice Computes median of provider reports that their timestamps are in
-    * the valid timestamp range.
+    * @notice Computes median of provider reports whose timestamps are in the
+    * valid timestamp range.
     * @return AggregatedValue: Median of providers reported values.
     *         valid: Boolean indicating an aggregated value was computed successfully.
     */
