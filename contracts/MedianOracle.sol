@@ -43,14 +43,23 @@ contract MedianOracle is Ownable, IOracle {
     // is usable.
     uint256 public reportDelaySec;
 
-    // The minimum number of providers with valid reports needed to consider
-    // the aggregate report valid.
+    // The minimum number of providers with valid reports to consider the
+    // aggregate report valid.
     uint256 public minimumProviders = 1;
 
     // Timestamp of 1 is used to mark uninitialized and invalidated data.
     // This is needed so that timestamp of 1 is always considered expired.
     uint256 private constant MAX_REPORT_EXPIRATION_TIME = 10 years;
 
+    /**
+    * @param reportExpirationTimeSec_ The number of seconds after which the
+    *                                 report is deemed expired.
+    * @param reportDelaySec_ The number of seconds since reporting that has to
+    *                        pass before a report is usable
+    *                        before a report is usable.
+    * @param minimumProviders_ The minimum number of providers with valid
+    *                          reports to consider the aggregate report valid.
+    */
     constructor(uint256 reportExpirationTimeSec_,
                 uint256 reportDelaySec_,
                 uint256 minimumProviders_)
@@ -65,7 +74,8 @@ contract MedianOracle is Ownable, IOracle {
 
      /**
      * @notice Sets the report expiration period.
-     * @param reportExpirationTimeSec_ The new report expiration period.
+     * @param reportExpirationTimeSec_ The number of seconds after which the
+     *        report is deemed expired.
      */
     function setReportExpirationTimeSec(uint256 reportExpirationTimeSec_)
         external
@@ -75,6 +85,11 @@ contract MedianOracle is Ownable, IOracle {
         reportExpirationTimeSec = reportExpirationTimeSec_;
     }
 
+    /**
+    * @notice Sets the time period since reporting that has to pass before a
+    *         report is usable.
+    * @param reportDelaySec_ The new delay period in seconds.
+    */
     function setReportDelaySec(uint256 reportDelaySec_)
         external
         onlyOwner
@@ -82,6 +97,11 @@ contract MedianOracle is Ownable, IOracle {
         reportDelaySec = reportDelaySec_;
     }
 
+    /**
+    * @notice Sets the minimum number of providers with valid reports to
+    *         consider the aggregate report valid.
+    * @param minimumProviders_ The new minimum number of providers.
+    */
     function setMinimumProviders(uint256 minimumProviders_)
         external
         onlyOwner
@@ -125,7 +145,7 @@ contract MedianOracle is Ownable, IOracle {
 
     /**
     * @notice Computes median of provider reports whose timestamps are in the
-    * valid timestamp range.
+    *         valid timestamp range.
     * @return AggregatedValue: Median of providers reported values.
     *         valid: Boolean indicating an aggregated value was computed successfully.
     */
