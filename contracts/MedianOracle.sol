@@ -14,8 +14,8 @@ interface IOracle {
 /**
  * @title Median Oracle
  *
- * @dev Provides a value onchain that's aggregated from a whitelisted set of
- *      providers.
+ * @notice Provides a value onchain that's aggregated from a whitelisted set of
+ *         providers.
  */
 contract MedianOracle is Ownable, IOracle {
     using SafeMath for uint256;
@@ -43,6 +43,8 @@ contract MedianOracle is Ownable, IOracle {
     // is usable.
     uint256 public reportDelaySec;
 
+    // The minimum number of providers with valid reports needed to consider
+    // the aggregate report valid.
     uint256 public minimumProviders = 1;
 
     // Timestamp of 1 is used to mark uninitialized and invalidated data.
@@ -61,6 +63,10 @@ contract MedianOracle is Ownable, IOracle {
         minimumProviders = minimumProviders_;
     }
 
+     /**
+     * @notice Sets the report expiration period.
+     * @param reportExpirationTimeSec_ The new report expiration period.
+     */
     function setReportExpirationTimeSec(uint256 reportExpirationTimeSec_)
         external
         onlyOwner
@@ -85,6 +91,7 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     /**
+     * @notice Pushes a report for the calling provider.
      * @param payload is expected to be 18 decimal fixed point number.
      */
     function pushReport(uint256 payload) external
@@ -105,6 +112,9 @@ contract MedianOracle is Ownable, IOracle {
         reports[index_past].payload = payload;
     }
 
+    /**
+    * @notice Invalidates the reports of the calling provider.
+    */
     function purgeReports() external
     {
         address providerAddress = msg.sender;
@@ -113,6 +123,12 @@ contract MedianOracle is Ownable, IOracle {
         providerReports[providerAddress][1].timestamp=1;
     }
 
+    /**
+    * @notice Computes median of provider reports whose timestamps are in the
+    * valid timestamp range.
+    * @return AggregatedValue: Median of providers reported values.
+    *         valid: Boolean indicating an aggregated value was computed successfully.
+    */
     function getData()
         external
         returns (uint256, bool)
@@ -163,7 +179,7 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     /**
-     * @dev Authorizes a provider.
+     * @notice Authorizes a provider.
      * @param provider Address of the provider.
      */
     function addProvider(address provider)
@@ -177,7 +193,7 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     /**
-     * @dev Revokes provider authorization.
+     * @notice Revokes provider authorization.
      * @param provider Address of the provider.
      */
     function removeProvider(address provider)
@@ -198,7 +214,7 @@ contract MedianOracle is Ownable, IOracle {
     }
 
     /**
-     * @return The number of providers.
+     * @return The number of authorized providers.
      */
     function providersSize()
         external

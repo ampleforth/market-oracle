@@ -1,10 +1,19 @@
 pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/**
+ * @title Select
+ * @dev Median Selection Library
+ */
 library Select {
     using SafeMath for uint256;
 
-    // Sorts the input array up to the denoted size, and returns the median.
+    /**
+     * @dev Sorts the input array up to the denoted size, and returns the median.
+     * @param array Input array to compute its median.
+     * @param size Number of elements in array to compute the median for.
+     * @return Median of array.
+     */
     function computeMedian(uint256[] array, uint256 size)
         internal
         pure
