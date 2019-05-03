@@ -3,149 +3,244 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "./MarketSource.sol";
+import "./lib/Select.sol";
+
+
+interface IOracle {
+    function getData() external returns (uint256, bool);
+}
 
 
 /**
- * @title Market Oracle
+ * @title Median Oracle
  *
- * @dev Provides the exchange rate and volume data onchain using data from a whitelisted
- *      set of market source contracts.
- *      Exchange rate is the TOKEN:TARGET rate.
- *      Volume is a 24 hour trading volume in Token volume.
+ * @notice Provides a value onchain that's aggregated from a whitelisted set of
+ *         providers.
  */
-contract MarketOracle is Ownable {
+contract MedianOracle is Ownable, IOracle {
     using SafeMath for uint256;
 
-    // Whitelist of sources
-    MarketSource[] public whitelist;
+    struct Report {
+        uint256 timestamp;
+        uint256 payload;
+    }
 
-    event LogSourceAdded(MarketSource source);
-    event LogSourceRemoved(MarketSource source);
-    event LogSourceExpired(MarketSource source);
+    // Addresses of providers authorized to push reports.
+    address[] public providers;
+
+    // Reports indexed by provider address. Report[0].timestamp > 0
+    // indicates provider existence.
+    mapping (address => Report[2]) public providerReports;
+
+    event ProviderAdded(address provider);
+    event ProviderRemoved(address provider);
+    event ReportTimestampOutOfRange(address provider);
+
+    // The number of seconds after which the report is deemed expired.
+    uint256 public reportExpirationTimeSec;
+
+    // The number of seconds since reporting that has to pass before a report
+    // is usable.
+    uint256 public reportDelaySec;
+
+    // The minimum number of providers with valid reports to consider the
+    // aggregate report valid.
+    uint256 public minimumProviders = 1;
+
+    // Timestamp of 1 is used to mark uninitialized and invalidated data.
+    // This is needed so that timestamp of 1 is always considered expired.
+    uint256 private constant MAX_REPORT_EXPIRATION_TIME = 520 weeks;
 
     /**
-     * @dev Calculates the volume weighted average of exchange rates and total trade volume.
-     *      Expired market sources are ignored. If there has been no trade volume in the last
-     *      24hrs, then there is effectively no exchange rate and that value should be ignored by
-     *      the client.
-     * @return exchangeRate: Volume weighted average of exchange rates.
-     *         volume: Total trade volume of the last reported 24 hours in Token volume.
-     */
-    function getPriceAnd24HourVolume()
-        external
-        returns (uint256, uint256)
+    * @param reportExpirationTimeSec_ The number of seconds after which the
+    *                                 report is deemed expired.
+    * @param reportDelaySec_ The number of seconds since reporting that has to
+    *                        pass before a report is usable
+    *                        before a report is usable.
+    * @param minimumProviders_ The minimum number of providers with valid
+    *                          reports to consider the aggregate report valid.
+    */
+    constructor(uint256 reportExpirationTimeSec_,
+                uint256 reportDelaySec_,
+                uint256 minimumProviders_)
+        public
     {
-        uint256 volumeWeightedSum = 0;
-        uint256 volumeSum = 0;
-        uint256 partialRate = 0;
-        uint256 partialVolume = 0;
-        bool isSourceFresh = false;
+        require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
+        require(minimumProviders_ > 0);
+        reportExpirationTimeSec = reportExpirationTimeSec_;
+        reportDelaySec = reportDelaySec_;
+        minimumProviders = minimumProviders_;
+    }
 
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            (isSourceFresh, partialRate, partialVolume) = whitelist[i].getReport();
+     /**
+     * @notice Sets the report expiration period.
+     * @param reportExpirationTimeSec_ The number of seconds after which the
+     *        report is deemed expired.
+     */
+    function setReportExpirationTimeSec(uint256 reportExpirationTimeSec_)
+        external
+        onlyOwner
+    {
+        require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
+        reportExpirationTimeSec = reportExpirationTimeSec_;
+    }
 
-            if (!isSourceFresh) {
-                emit LogSourceExpired(whitelist[i]);
-                continue;
+    /**
+    * @notice Sets the time period since reporting that has to pass before a
+    *         report is usable.
+    * @param reportDelaySec_ The new delay period in seconds.
+    */
+    function setReportDelaySec(uint256 reportDelaySec_)
+        external
+        onlyOwner
+    {
+        reportDelaySec = reportDelaySec_;
+    }
+
+    /**
+    * @notice Sets the minimum number of providers with valid reports to
+    *         consider the aggregate report valid.
+    * @param minimumProviders_ The new minimum number of providers.
+    */
+    function setMinimumProviders(uint256 minimumProviders_)
+        external
+        onlyOwner
+    {
+        require(minimumProviders_ > 0);
+        minimumProviders = minimumProviders_;
+    }
+
+    /**
+     * @notice Pushes a report for the calling provider.
+     * @param payload is expected to be 18 decimal fixed point number.
+     */
+    function pushReport(uint256 payload) external
+    {
+        address providerAddress = msg.sender;
+        Report[2] storage reports = providerReports[providerAddress];
+        uint256[2] memory timestamps = [reports[0].timestamp, reports[1].timestamp];
+
+        require(timestamps[0] > 0);
+
+        uint8 index_recent = timestamps[0] >= timestamps[1] ? 0 : 1;
+        uint8 index_past = 1 - index_recent;
+
+        // Check that the push is not too soon after the last one.
+        require(timestamps[index_recent].add(reportDelaySec) <= now);
+
+        reports[index_past].timestamp = now;
+        reports[index_past].payload = payload;
+    }
+
+    /**
+    * @notice Invalidates the reports of the calling provider.
+    */
+    function purgeReports() external
+    {
+        address providerAddress = msg.sender;
+        require (providerReports[providerAddress][0].timestamp > 0);
+        providerReports[providerAddress][0].timestamp=1;
+        providerReports[providerAddress][1].timestamp=1;
+    }
+
+    /**
+    * @notice Computes median of provider reports whose timestamps are in the
+    *         valid timestamp range.
+    * @return AggregatedValue: Median of providers reported values.
+    *         valid: Boolean indicating an aggregated value was computed successfully.
+    */
+    function getData()
+        external
+        returns (uint256, bool)
+    {
+        uint256 reportsCount = providers.length;
+        uint256[] memory validReports = new uint256[](reportsCount);
+        uint256 size = 0;
+        uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
+        uint256 maxValidTimestamp =  now.sub(reportDelaySec);
+
+        for (uint256 i = 0; i < reportsCount; i++) {
+            address providerAddress = providers[i];
+            Report[2] memory reports = providerReports[providerAddress];
+
+            uint8 index_recent = reports[0].timestamp >= reports[1].timestamp ? 0 : 1;
+            uint8 index_past = 1 - index_recent;
+            uint256 reportTimestampRecent = reports[index_recent].timestamp;
+            if (reportTimestampRecent > maxValidTimestamp) {
+                // Recent report is too recent.
+                uint256 reportTimestampPast = providerReports[providerAddress][index_past].timestamp;
+                if (reportTimestampPast < minValidTimestamp) {
+                    // Past report is too old.
+                    emit ReportTimestampOutOfRange(providerAddress);
+                } else if (reportTimestampPast > maxValidTimestamp) {
+                    // Past report is too recent.
+                    emit ReportTimestampOutOfRange(providerAddress);
+                } else {
+                    // Using past report.
+                    validReports[size++] = providerReports[providerAddress][index_past].payload;
+                }
+            } else {
+                // Recent report is not too recent.
+                if (reportTimestampRecent < minValidTimestamp) {
+                    // Recent report is too old.
+                    emit ReportTimestampOutOfRange(providerAddress);
+                } else {
+                    // Using recent report.
+                    validReports[size++] = providerReports[providerAddress][index_recent].payload;
+                }
             }
-
-            volumeWeightedSum = volumeWeightedSum.add(partialRate.mul(partialVolume));
-            volumeSum = volumeSum.add(partialVolume);
         }
 
-        // No explicit fixed point normalization is done as dividing by volumeSum normalizes
-        // to exchangeRate's format.
-        uint256 exchangeRate = volumeSum > 0
-            ? volumeWeightedSum.div(volumeSum)
-            : 0;
-        return (exchangeRate, volumeSum);
+        if (size < minimumProviders) {
+            return (0, false);
+        }
+
+        return (Select.computeMedian(validReports, size), true);
     }
 
     /**
-     * @dev Adds a market source to the whitelist.
-     * Upgradeable contracts should never be added,
-     * because the logic could be changed after the whitelisting process.
-     * @param source Address of the MarketSource.
+     * @notice Authorizes a provider.
+     * @param provider Address of the provider.
      */
-    function addSource(MarketSource source)
+    function addProvider(address provider)
         external
         onlyOwner
     {
-        whitelist.push(source);
-        emit LogSourceAdded(source);
+        require(providerReports[provider][0].timestamp == 0);
+        providers.push(provider);
+        providerReports[provider][0].timestamp = 1;
+        emit ProviderAdded(provider);
     }
 
     /**
-     * @dev Removes the provided market source from the whitelist.
-     * @param source Address of the MarketSource.
+     * @notice Revokes provider authorization.
+     * @param provider Address of the provider.
      */
-    function removeSource(MarketSource source)
+    function removeProvider(address provider)
         external
         onlyOwner
     {
-        for (uint256 i = 0; i < whitelist.length; i++) {
-            if (whitelist[i] == source) {
-                removeSourceAtIndex(i);
+        delete providerReports[provider];
+        for (uint256 i = 0; i < providers.length; i++) {
+            if (providers[i] == provider) {
+                if (i + 1  != providers.length) {
+                    providers[i] = providers[providers.length-1];
+                }
+                providers.length--;
+                emit ProviderRemoved(provider);
                 break;
             }
         }
     }
 
     /**
-     * @dev Expunges from the whitelist any MarketSource whose associated contracts have been
-     *      destructed.
+     * @return The number of authorized providers.
      */
-    function removeDestructedSources()
+    function providersSize()
         external
-    {
-        uint256 i = 0;
-        while (i < whitelist.length) {
-            if (isContractDestructed(whitelist[i])) {
-                removeSourceAtIndex(i);
-            } else {
-                i++;
-            }
-        }
-    }
-
-    /**
-     * @return The number of market sources in the whitelist.
-     */
-    function whitelistSize()
-        public
         view
         returns (uint256)
     {
-        return whitelist.length;
-    }
-
-    /**
-     * @dev Checks if a contract has been destructed.
-     * @param contractAddress Address of the contract.
-     */
-    function isContractDestructed(address contractAddress)
-        private
-        view
-        returns (bool)
-    {
-        uint256 size;
-        assembly { size := extcodesize(contractAddress) }
-        return size == 0;
-    }
-
-   /**
-    * Whitelist must be non-empty before calling.
-    * @param index Index of the MarketSource to be removed from the whitelist.
-    */
-    function removeSourceAtIndex(uint256 index)
-        private
-    {
-        // assert(whitelist.length > index);
-        emit LogSourceRemoved(whitelist[index]);
-        if (index != whitelist.length-1) {
-            whitelist[index] = whitelist[whitelist.length-1];
-        }
-        whitelist.length--;
+        return providers.length;
     }
 }
