@@ -49,7 +49,7 @@ contract MedianOracle is Ownable, IOracle {
 
     // Timestamp of 1 is used to mark uninitialized and invalidated data.
     // This is needed so that timestamp of 1 is always considered expired.
-    uint256 private constant MAX_REPORT_EXPIRATION_TIME = 10 years;
+    uint256 private constant MAX_REPORT_EXPIRATION_TIME = 520 weeks;
 
     /**
     * @param reportExpirationTimeSec_ The number of seconds after which the
