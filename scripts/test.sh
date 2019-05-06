@@ -39,9 +39,4 @@ run-all-tests(){
 
 run-all-tests "ganacheUnitTest"
 
-if [ "${TRAVIS_EVENT_TYPE}" == "cron" ]
-then
-  run-all-tests "gethUnitTest"
-fi
-
 exit 0
