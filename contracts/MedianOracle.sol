@@ -56,7 +56,6 @@ contract MedianOracle is Ownable, IOracle {
     *                                 report is deemed expired.
     * @param reportDelaySec_ The number of seconds since reporting that has to
     *                        pass before a report is usable
-    *                        before a report is usable.
     * @param minimumProviders_ The minimum number of providers with valid
     *                          reports to consider the aggregate report valid.
     */
