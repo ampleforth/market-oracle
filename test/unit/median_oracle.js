@@ -76,9 +76,18 @@ contract('MedianOracle:pushReport', async function (accounts) {
   it('should only push from authorized source', async function () {
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
     oracle.addProvider(A, { from: deployer });
-    await oracle.pushReport(1000000000000000000, { from: A });
+    r = await oracle.pushReport(1000000000000000000, { from: A });
     // should fail if reportDelaySec did not pass since the previous push
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
+  });
+  it('should emit ProviderReportPushed message', async function () {
+    const logs = r.logs;
+    const event = logs[0];
+    expect(event.event).to.eq('ProviderReportPushed');
+    expect(event.args.provider).to.eq(A);
+    event.args.payload.should.be.bignumber.eq(1000000000000000000);
+    const block = await chain.web3.eth.getBlock(logs[0].blockNumber);
+    event.args.timestamp.should.be.bignumber.eq(block.timestamp);
   });
 });
 
