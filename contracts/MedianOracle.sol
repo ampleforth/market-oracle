@@ -35,7 +35,7 @@ contract MedianOracle is Ownable, IOracle {
     event ProviderAdded(address provider);
     event ProviderRemoved(address provider);
     event ReportTimestampOutOfRange(address provider);
-    event ProviderReportPushed(address provider, uint256 payload, uint256 timestamp);
+    event ProviderReportPushed(address indexed provider, uint256 payload, uint256 timestamp);
 
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec;
