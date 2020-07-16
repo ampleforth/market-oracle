@@ -77,7 +77,8 @@ contract('MedianOracle:pushReport', async function (accounts) {
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
     oracle.addProvider(A, { from: deployer });
     r = await oracle.pushReport(1000000000000000000, { from: A });
-    // should fail if reportDelaySec did not pass since the previous push
+    r = await oracle.pushReport(1000000000000000000, { from: A });
+    // should fail if push is too early
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
   });
   it('should emit ProviderReportPushed message', async function () {
