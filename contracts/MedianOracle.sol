@@ -4,6 +4,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./lib/Select.sol";
+import "./lib/UsingTellor.sol";
 
 
 interface IOracle {
@@ -51,6 +52,15 @@ contract MedianOracle is Ownable, IOracle {
     // Timestamp of 1 is used to mark uninitialized and invalidated data.
     // This is needed so that timestamp of 1 is always considered expired.
     uint256 private constant MAX_REPORT_EXPIRATION_TIME = 520 weeks;
+
+    //Tellor Specifc variable
+    TellorMaster tellor;
+    struct TellorTimes{
+        uint128 time0;
+        uint128 time1;
+    }
+    TellorTimes tellorReport;
+    uint256 constant TellorID = 10;
 
     /**
     * @param reportExpirationTimeSec_ The number of seconds after which the
@@ -116,7 +126,24 @@ contract MedianOracle is Ownable, IOracle {
      */
     function pushReport(uint256 payload) external
     {
-        address providerAddress = msg.sender;
+        _pushReportInternal(payload, msg.sender);
+    }
+
+    function pushTellor() public {
+        (bool retrieved, uint256 value, uint256 _time) = getTellorData(); 
+        
+        require(_time > now.sub(reportExpirationTimeSec) && retrieved, "Tellor value too old");
+
+        //Saving _time in a storage value to quickly verify disputes later
+        if(tellorReport.time0 >= tellorReport.time1) {
+            tellorReport.time1 = uint128(_time);
+        } else {
+            tellorReport.time0 = uint128(_time);
+        }
+        _pushReportInternal(value, address(tellor));
+    }
+
+    function _pushReportInternal(uint256 payload, address providerAddress) internal {
         Report[2] storage reports = providerReports[providerAddress];
         uint256[2] memory timestamps = [reports[0].timestamp, reports[1].timestamp];
 
@@ -134,6 +161,16 @@ contract MedianOracle is Ownable, IOracle {
         emit ProviderReportPushed(providerAddress, payload, now);
     }
 
+    function getTellorData() internal view returns(bool, uint256, uint256){
+        uint256 _count = tellor.getNewValueCountbyRequestId(TellorID);
+        if(_count > 0) {
+            uint256 _time = tellor.getTimestampbyRequestIDandIndex(TellorID, _count - 1);
+            uint256 _value = tellor.retrieveData(TellorID, _time);
+            return(true, _value, _time);
+        }
+        return (false, 0, 0);
+    }
+
     /**
     * @notice Invalidates the reports of the calling provider.
     */
@@ -143,6 +180,15 @@ contract MedianOracle is Ownable, IOracle {
         require (providerReports[providerAddress][0].timestamp > 0);
         providerReports[providerAddress][0].timestamp=1;
         providerReports[providerAddress][1].timestamp=1;
+    }
+
+    function verifyTellorReports() public {
+        address providerAddress = address(tellor);
+        if(tellor.isInDispute(10, tellorReport.time0))
+            providerReports[providerAddress][0].timestamp=1;
+
+        if(tellor.isInDispute(10,tellorReport.time1))  //most recent tellor report is in dispute, so let's purge it
+            providerReports[providerAddress][1].timestamp=1;
     }
 
     /**
@@ -160,6 +206,8 @@ contract MedianOracle is Ownable, IOracle {
         uint256 size = 0;
         uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
         uint256 maxValidTimestamp =  now.sub(reportDelaySec);
+
+        verifyTellorReports(); // Checks if no dispute happend in Tellor value.
 
         for (uint256 i = 0; i < reportsCount; i++) {
             address providerAddress = providers[i];
