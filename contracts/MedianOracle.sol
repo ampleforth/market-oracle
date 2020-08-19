@@ -4,7 +4,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "./lib/Select.sol";
-import "./lib/UsingTellor.sol";
+import "./lib/ITellorGetters.sol";
 
 
 interface IOracle {
@@ -54,7 +54,7 @@ contract MedianOracle is Ownable, IOracle {
     uint256 private constant MAX_REPORT_EXPIRATION_TIME = 520 weeks;
 
     //Tellor Specifc variable
-    TellorMaster tellor;
+    ITellorGetters tellor;
     struct TellorTimes{
         uint128 time0;
         uint128 time1;
@@ -72,7 +72,8 @@ contract MedianOracle is Ownable, IOracle {
     */
     constructor(uint256 reportExpirationTimeSec_,
                 uint256 reportDelaySec_,
-                uint256 minimumProviders_)
+                uint256 minimumProviders_,
+                address tellorMaster)
         public
     {
         require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
@@ -80,6 +81,7 @@ contract MedianOracle is Ownable, IOracle {
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
         minimumProviders = minimumProviders_;
+        tellor = ITellorGetters(tellorMaster);
     }
 
      /**
@@ -184,10 +186,11 @@ contract MedianOracle is Ownable, IOracle {
 
     function verifyTellorReports() public {
         address providerAddress = address(tellor);
-        if(tellor.isInDispute(10, tellorReport.time0))
+        //most recent tellor report is in dispute, so let's purge it
+        if(tellor.retrieveData(TellorID, tellorReport.time0) == 0)
             providerReports[providerAddress][0].timestamp=1;
 
-        if(tellor.isInDispute(10,tellorReport.time1))  //most recent tellor report is in dispute, so let's purge it
+        if(tellor.retrieveData(TellorID,tellorReport.time1) == 0)  
             providerReports[providerAddress][1].timestamp=1;
     }
 
