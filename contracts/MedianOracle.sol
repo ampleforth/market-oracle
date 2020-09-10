@@ -36,6 +36,7 @@ contract MedianOracle is Ownable, IOracle {
     event ProviderRemoved(address provider);
     event ReportTimestampOutOfRange(address provider);
     event ProviderReportPushed(address indexed provider, uint256 payload, uint256 timestamp);
+    event ProviderReportForcePushed(address indexed provider, uint256 payload, uint256 timestamp);
 
     // The number of seconds after which the report is deemed expired.
     uint256 public reportExpirationTimeSec;
@@ -131,12 +132,32 @@ contract MedianOracle is Ownable, IOracle {
 
         // Check that the push is not too soon after the last one.
         require(timestamps[index_past] < minValidTimestamp ||
-            timestamps[index_recent] <= maxValidTimestamp);
+            timestamps[index_recent] <= maxValidTimestamp, "pushReport too soon after previous push");
 
         reports[index_past].timestamp = now;
         reports[index_past].payload = payload;
 
         emit ProviderReportPushed(providerAddress, payload, now);
+    }
+
+    /**
+    * @notice Pushes a report for the calling provider, while erasing other values.
+    * @param payload is expected to be 18 decimal fixed point number.
+    */
+    function forcePushReport(uint256 payload) external
+    {
+        address providerAddress = msg.sender;
+        Report[2] storage reports = providerReports[providerAddress];
+        uint256[2] memory timestamps = [reports[0].timestamp, reports[1].timestamp];
+
+        // Checks that this providerAddress is already whitelisted
+        require(timestamps[0] > 0);
+
+        reports[0].timestamp = now;
+        reports[0].payload = payload;
+        reports[1].timestamp = 1;
+
+        emit ProviderReportForcePushed(providerAddress, payload, now);
     }
 
     /**
