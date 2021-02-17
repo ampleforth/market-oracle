@@ -69,6 +69,15 @@ contract('MedianOracle:addProvider', async function (accounts) {
   });
 });
 
+// TODO(naguib): Add test scenarios for:
+// Reported rates (ordered by time) are r1, r2. The new rate is r.
+//   r2 < minValidTimestamp
+//   r1 < minValidTimestamp < r2 < maxValidTimestamp
+//   minValidTimestamp < r1 < r2 < maxValidTimestamp
+//   r1 < minValidTimestamp < maxValidTimestamp < r2
+//   minValidTimestamp < r1 < maxValidTimestamp < r2
+//   maxValidTimestamp < r1
+
 contract('MedianOracle:pushReport', async function (accounts) {
   before(async function () {
     await setupContractsAndAccounts(accounts);
@@ -77,7 +86,8 @@ contract('MedianOracle:pushReport', async function (accounts) {
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
     oracle.addProvider(A, { from: deployer });
     r = await oracle.pushReport(1000000000000000000, { from: A });
-    // should fail if reportDelaySec did not pass since the previous push
+    r = await oracle.pushReport(1000000000000000000, { from: A });
+    // should fail if push is too early
     expect(await chain.isEthException(oracle.pushReport(1000000000000000000, { from: A }))).to.be.true;
   });
   it('should emit ProviderReportPushed message', async function () {
